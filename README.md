@@ -1,74 +1,60 @@
-# Hardhat Boilerplate(Minimal)
+# CrossValue Gated Discord Bot
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts with balances.
+CrossValue Gated Discord Bot which facilitates secure and gated exclusive access to server channels for users holding CrossValue Chain (XCR) tokens. The bot verifies user's XCR balance, granting them the CVC Insider role if they meet the required balance. This role provides exclusive access to crossvalue gated channel, and periodically checks and updates their roles based on their current balance.
 
-## Getting Started
+### Prerequisites
 
-> Recommended to use Node.js v18+ and npm v8+
+1. A Discord Account
 
-Try running some of the following tasks:
+2. An ethereum compatible wallet(eg. Metamask) with XCR testnet tokens. You can get testnet tokens from the CrossValue Discord server.
 
-```bash
-npm install
+### Steps:
 
-# Set/Read/Remove hardhat config variables
-# npx hardhat vars set API_KEY
-# npx hardhat vars get API_KEY
-# npx hardhat vars DELETE API_KEY
-# npx hardhat vars list
+1. Join the CrossValue Hub Discord Server: https://discord.gg/S28xtbrYXt
 
-# set PRIVATE_KEY
-npx hardhat vars set PRIVATE_KEY
+2. Ensure you have a minimum of 0.1 XCR testnet balance in your account. If not, visit the CrossValueChain Discord server to obtain some if you wanted to access exclusive Balance gated channels.
 
+3. Open the `#⁠start-here` channel on discord server.Type the command `/verify` in the channel.
 
-# starts local node
-npx hardhat node
+4. Our bot will send you a link to connect your wallet and sign a message. After you sign the message, the bot will verify if you have a minimum of 0.1 XCR testnet balance in your account.
 
-# compile contracts
-npx hardhat compile
+5. If you have enough balance in your wallet, you will be assigned the `CVC Insider` role and gain access to the exclusive channels and perks on the server. If not enough balance, you will still be assigned the `member` role, which will allow you access to the `⁠#general` channels on the server.
 
-# deploy contract in scripts/deploy.ts on specified network
-npx hardhat run scripts/deploy.ts --network localhost
+## Getting Started(Developer Guide)
 
-# verify contract
-npx hardhat verify --network <deployed network> <deployed contract address> "<constructor1>" "<constructor2>"
+### Prerequisites
 
-# check coverage using solidity-coverage plugin: supports hardhat network only
-npx hardhat coverage --network hardhat
+1. A Discord account
+2. A Discord server where you have permissions to manage roles and channels and add bots.
+3. An Ethereum wallet with some XCR testnet tokens. You can get some test tokens from the [CrossValue Chain Docs](https://docs.crossvalue.io/testnet/claim-kura-testnet-xcr).
 
-# unit tests including gas usage
-npx hardhat test
+### Steps:
 
-# remove all compiled and deployed artifacts
-npx hardhat clean
+Coming soon...
 
-# show help
-npx hardhat help
-```
+### Troubleshooting
 
-## Change Log
+If you encounter any issues with the bot, please do the following:
 
-#### v1.2.3
+1. Check that the bot has the necessary permissions in the server (Manage Roles, Manage Channels, Manage Messages)
+2. Check that the environment variables have been set up correctly in the .env file
+3. Check the logs for any error messages
 
-- Replaced deprecated mumbai network with amoy network in `hardhat.config.ts`
-- Compiler version updated to `0.8.24`
-- Hardhat deps update
-- Generalized `deploy.ts` script for any contract with minimal changes
-- README.md sections update
+## Built With
 
-## References
-
-- [Hardhat](https://hardhat.org/)
-- [Hardhat Docs](https://hardhat.org/getting-started/)
-- [Ethers.js](https://docs.ethers.io/v5/)
-- [Solidity](https://docs.soliditylang.org/en/v0.8.25/)
+- [Discord](https://discord.com/) - A free communications app that lets you share voice, video, and text chat with friends, game communities, and developers.
+- [Discord.js](https://discord.js.org/) - A powerful Node.js module that allows you to interact with the Discord API very easily.
+- [Ethers.js](https://docs.ethers.io/v5/) - A library that allows you to interact with the Ethereum blockchain.
+- [Express.js](https://expressjs.com/) - A minimal and flexible Node.js web application framework that provides a robust set of features for web and mobile applications.
+- [CrossValue Chain](https://crossvalue.io/) - An EVM-compatible Layer 1 blockchain with integrated autonomous decentralized on-chain storage.
 
 ## Safety
 
 This is experimental software and subject to change over time.
 
-This is a proof of concept and is not ready for production use. It is not audited and has not been tested for security. Use at your own risk. I do not give any warranties and will not be liable for any loss incurred through any use of this codebase.
+This is a proof of concept and is not ready for production use. It is not audited and has not been tested for security. Use at your own risk.
+I do not give any warranties and will not be liable for any loss incurred through any use of this codebase.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
