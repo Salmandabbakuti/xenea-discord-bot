@@ -17,15 +17,30 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildPresences
   ],
-  partials: [Partials.GuildMember, Partials.Message]
+  partials: [Partials.GuildMember, Partials.Message, Partials.Channel]
 });
 client.login(DISCORD_BOT_TOKEN);
 
 client.once(Events.ClientReady, () =>
   console.log(`Logged in as ${client.user.tag}`)
 );
+
+client.on(Events.GuildMemberAdd, (member) => {
+  console.log("a new member hopped into server", member.user.tag);
+  const startHereChannel = member.guild.channels.cache.get(
+    DISCORD_SERVER_START_HERE_CHANNEL_ID
+  );
+  startHereChannel.send({
+    content: `Welcome, ${member.user.username}. We hope you brought pizza! Please type \`/verify\` command to verify your wallet and get access to our exclusive channels and perks!`
+  });
+});
+
+client.on(Events.GuildMemberRemove, (member) => {
+  console.log("a member left the server", member.user.tag, member.id);
+});
 
 client.on(Events.MessageCreate, (msg) => {
   console.log("Message received", msg.content, msg.author.tag);
