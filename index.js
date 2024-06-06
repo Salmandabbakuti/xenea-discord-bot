@@ -43,7 +43,7 @@ client.on(Events.GuildMemberRemove, (member) => {
 });
 
 client.on(Events.MessageCreate, (msg) => {
-  console.log("Message received", msg.content, msg.author.tag);
+  console.log("Message received", msg.content);
   if (
     msg.author.bot ||
     msg.system ||
@@ -97,9 +97,9 @@ client.on(Events.InteractionCreate, (interaction) => {
   }
 });
 
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
+app.get("/verify", (req, res) =>
+  res.sendFile(__dirname + "/public/index.html")
+);
 
 const port = process.env.PORT || 3000;
 app.listen(port, () =>
