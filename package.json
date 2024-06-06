@@ -8,7 +8,8 @@
     "compile": "npx hardhat compile",
     "deploy": "npx hardhat deploy",
     "dev": "nodemon -x node --inspect index.js --ext js",
-    "start": "node index.js"
+    "start": "node index.js",
+    "commands:deploy": "node deploy-commands.js"
   },
   "keywords": [],
   "author": "Salman Dabbakuti",
@@ -20,6 +21,8 @@
   },
   "dependencies": {
     "cors": "^2.8.5",
+    "discord.js": "^14.15.3",
+    "dotenv": "^16.4.5",
     "express": "^4.19.2"
   }
 }
