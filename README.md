@@ -1,12 +1,14 @@
 # CrossValue Gated Discord Bot
 
-CrossValue Gated Discord Bot which facilitates secure and gated exclusive access to server channels for users holding CrossValue Chain (XCR) tokens. The bot verifies user's XCR balance, granting them the CVC Insider role if they meet the required balance. This role provides exclusive access to crossvalue gated channel, and periodically checks and updates their roles based on their current balance.
+CrossValue Gated Discord Bot which facilitates secure and gated exclusive access to server channels for users holding LinkFolio NFT deployed on crossvalue chain. The bot verifies user's LinkFolio(LIFO)balance, granting them the CVC Insider role if they have atleast 1 LIFO Token. This role provides exclusive access to crossvalue gated channel, and periodically checks and updates their roles based on their current balance.
 
 ### Prerequisites
 
 1. A Discord Account
 
 2. An ethereum compatible wallet(eg. Metamask) with XCR testnet tokens. You can get testnet tokens from the CrossValue Discord server.
+
+3. A LinkFolio Profile NFT minted to your wallet. You can mint a LinkFolio Profile NFT from the [LinkFolio Dapp](https://linkfol-io.vercel.app/)
 
 ### Steps:
 
