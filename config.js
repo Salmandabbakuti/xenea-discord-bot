@@ -8,6 +8,5 @@ module.exports = {
   RPC_URL: process.env.RPC_URL,
   REQUIRED_MINIMUM_BALANCE: 0.1, // 0.1 XCR,
   APP_URL: process.env.APP_URL,
-  JWT_SECRET: process.env.JWT_SECRET,
-
+  JWT_SECRET: process.env.JWT_SECRET
 };

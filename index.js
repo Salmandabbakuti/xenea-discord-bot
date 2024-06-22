@@ -13,6 +13,7 @@ const { recoverAddress } = require("@ethersproject/transactions");
 const { arrayify } = require("@ethersproject/bytes");
 const { hashMessage } = require("@ethersproject/hash");
 const { JsonRpcProvider } = require("@ethersproject/providers");
+const { Contract } = require("@ethersproject/contracts");
 const jwt = require("jsonwebtoken");
 
 const {
@@ -28,6 +29,20 @@ const app = express();
 app.use(express.json());
 
 const provider = new JsonRpcProvider(RPC_URL);
+
+
+// LinkFolio contract on CVC Kura
+const linkFolioAbi = [
+  "function balanceOf(address account) view returns (uint256)"
+];
+
+const linkFolioAddress = "0xF12d01e64E4A17976b532C72A9C2fCe57b57654A";
+
+const linkFolioContract = new Contract(
+  linkFolioAddress,
+  linkFolioAbi,
+  provider
+);
 
 const client = new Client({
   intents: [
@@ -110,18 +125,25 @@ client.on(Events.InteractionCreate, (interaction) => {
     const greeting = "Hello there! Welcome to the server!";
     const steps = [
       `Please Click on Verify with Wallet to verify your wallet address.`,
-      `Make sure you have a minimum of ${REQUIRED_MINIMUM_BALANCE} XCR in your wallet.`,
+      "Make sure you have at least 1 LinkFolio Profile minted to wallet to be verified. Please go to https://linkfol-io.vercel.app/ to create a LinkFolio Profile",
       "Once verified, you'll be automatically assigned the CVC Insider role which will give you access to our exclusive channels and perks!"
     ];
     const outro =
       "If you have any questions or encounter any issues, please don't hesitate to reach out to us. Good luck and have fun!";
     const message = greeting + "\n\n" + steps.join("\n") + "\n\n" + outro;
+
     const verifyWithWalletButton = new ButtonBuilder()
       .setLabel("Verify with Wallet")
       .setStyle(ButtonStyle.Link)
       .setURL(`${APP_URL}/verify?token=${jwtToken}`);
+
+    const linkfolioButton = new ButtonBuilder()
+      .setLabel("LinkFolio")
+      .setStyle(ButtonStyle.Link)
+      .setURL(`https://linkfol-io.vercel.app/`);
     const actionRow = new ActionRowBuilder().addComponents(
-      verifyWithWalletButton
+      verifyWithWalletButton,
+      linkfolioButton
     );
     interaction.reply({
       content: message,
@@ -156,8 +178,10 @@ app.post("/verify", async (req, res) => {
         .status(401)
         .send({ code: "Unauthorized", message: "Invalid wallet signature" });
 
-    const userBalance = await provider.getBalance(address);
-    console.log("user balance", userBalance.toString());
+    // const userBalance = await provider.getBalance(address);
+    // must possess at least 1 LIFO to be verified 
+    const userBalance = await linkFolioContract.balanceOf(address);
+    console.log("user LIFO balance", userBalance.toString());
 
     const guild = client.guilds.cache.get(guildId);
     const member = await guild.members.fetch(memberId);
@@ -166,7 +190,7 @@ app.post("/verify", async (req, res) => {
     );
     const truncatedAddress = address.slice(0, 5) + "..." + address.slice(-4);
 
-    const hasRequiredBalance = userBalance.gte(100000000000000000n);
+    const hasRequiredBalance = userBalance.gte(1n);
 
     // add member role by default upon verifying wallet
     const memberRole = guild.roles.cache.find((role) => role.name === "member");
@@ -183,7 +207,7 @@ app.post("/verify", async (req, res) => {
       );
     } else {
       startHereChannel.send(
-        `Hey <@${memberId}>, your wallet address ${truncatedAddress} has been verified and you have been given member role. but you don't have enough XCR Balance to access #crossvalue-exclusive. A minimum of ${REQUIRED_MINIMUM_BALANCE} XCR is required.`
+        `Hey <@${memberId}>, your wallet address ${truncatedAddress} has been verified and you have been given member role. but, you do not have LinkFolio Profile minted to wallet. Please go to https://linkfol-io.vercel.app/ to create a LinkFolio Profile and come back to access the #crossvalue-exclusive channel.`
       );
     }
     return res.status(200).json({ code: "ok", message: "Success" });

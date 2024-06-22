@@ -12,13 +12,13 @@ CrossValue Gated Discord Bot which facilitates secure and gated exclusive access
 
 1. Join the CrossValue Hub Discord Server: https://discord.gg/S28xtbrYXt
 
-2. Ensure you have a minimum of 0.1 XCR testnet balance in your account. If not, visit the CrossValueChain Discord server to obtain some if you wanted to access exclusive Balance gated channels.
+2. Make sure you have at least 1 LinkFolio Profile minted to wallet to be verified. Please go to https://linkfol-io.vercel.app/ to create a LinkFolio Profile(You can think of it as web3 version of linktree to manage all your social links)
 
 3. Open the `#⁠start-here` channel on discord server.Type the command `/verify` in the channel.
 
-4. Our bot will send you a link to connect your wallet and sign a message. After you sign the message, the bot will verify if you have a minimum of 0.1 XCR testnet balance in your account.
+4. Our bot will send you a link to connect your wallet and sign a message. After you sign the message, the bot will verify if you have a LinkFolio Profile minted to your wallet.
 
-5. If you have enough balance in your wallet, you will be assigned the `CVC Insider` role and gain access to the exclusive channels and perks on the server. If not enough balance, you will still be assigned the `member` role, which will allow you access to the `⁠#general` channels on the server.
+5. If you have LinkFolio Profile NFT in your wallet, you will be assigned the `CVC Insider` role and gain access to the exclusive channels and perks on the server. If not, you will still be assigned the `member` role, which will allow you access to the `⁠#general` channels on the server.
 
 ## Getting Started(Developer Guide)
 
@@ -39,6 +39,16 @@ If you encounter any issues with the bot, please do the following:
 1. Check that the bot has the necessary permissions in the server (Manage Roles, Manage Channels, Manage Messages)
 2. Check that the environment variables have been set up correctly in the .env file
 3. Check the logs for any error messages
+
+## Change Log
+
+### v0.0.1
+
+- Initial release
+
+### v0.0.2
+
+- Added gating by utility LinkFolio NFT token balance
 
 ## Built With
 
