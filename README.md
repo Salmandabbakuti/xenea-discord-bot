@@ -22,11 +22,13 @@ The Xenea Gated Discord Bot facilitates secure and gated exclusive access to ser
 
 #### For Server Members
 
-4. Open the `#⁠start-here` (or any info channel your community managers instruct) channel on discord server. Type the command `/verify` in the channel.
+1. Join the Discord server where the Xenea bot is installed.
 
-5. Bot will send you a link to connect your wallet and sign a message. After you sign the message, the bot will verify if you have required ERC20/721 tokens(token address and required amount set by server admin) in your wallet.
+2. Open the `#⁠start-here` (or any info channel your community managers instruct) channel on discord server. Type the command `/verify` in the channel.
 
-6. If you have required amount of said tokens in wallet, you will be assigned the gated role(set by server admin in config) and gain access to the exclusive channels and perks on the server.
+3. Bot will send you a link to connect your wallet and sign a message. After you sign the message, the bot will verify if you have required ERC20/721 tokens(token address and required amount set by server admin) in your wallet.
+
+4. If you have required amount of said tokens in wallet, you will be assigned the gated role(set by server admin in config) and gain access to the exclusive channels and perks on the server.
 
 ## Getting Started(Developer Guide)
 
