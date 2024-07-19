@@ -1,26 +1,55 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
   <meta charset="UTF-8" />
-  <title>CrossValue Token Gated Discord Portal</title>
+  <title>Xenea Discord Bot - Token Gated Channels</title>
   <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
   <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+
+    header {
+      background-color: #4CAF50;
+      padding: 2px;
+      color: white;
+      font-size: 18px;
+    }
+
+    nav ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    nav ul li {
+      display: inline;
+      margin: 0 5px;
+    }
+
+    nav ul li a {
+      color: white;
+      text-decoration: none;
+    }
+
     #band {
       width: 100%;
-      height: 7px;
+      height: 5px;
       background-color: rgb(4, 166, 255);
       margin-bottom: 10px;
     }
 
     h2 {
       text-align: center;
-      margin: 10px;
+      margin: 2px;
     }
 
-    h4 {
-      text-align: center;
-      margin: 50px;
+    p {
+      margin: 10px 0;
     }
 
     button {
@@ -55,15 +84,14 @@
 
     #log {
       padding: 2rem;
-      font-size: 26px;
+      font-size: 20px;
       margin: 1.2rem auto;
       text-align: center;
       color: #0070f3;
       text-decoration: none;
       border: 1px solid #eaeaea;
       border-radius: 10px;
-      transition: color 0.15s ease, border-color 0.15s ease;
-      max-width: 900px;
+      max-width: 600px;
     }
 
     @media screen and (max-width: 768px) {
@@ -85,7 +113,7 @@
 
 <body>
   <header>
-    <h1>CrossValue Token Gated Discord Portal</h1>
+    <h1>Xenea Discord Bot</h1>
     <nav>
       <ul>
         <li><a href="#">Home</a></li>
@@ -95,19 +123,15 @@
     </nav>
   </header>
   <div id="band"></div>
-  <h2>Hold LinkFolio NFT Balance in your wallet, Access the Exclusive Gated Discord Channel</h2>
-  <!-- Go to linkfolio to get your NFT -->
-  <h4>
-    LinkFolio Transforms personal profiles into NFTs. Craft bio, avatar, and social links for a unique, onchain digital
-    identity.
-  </h4>
-  <h4>
-    <a href="https://linkfol-io.vercel.app/" target="_blank">Get your LinkFolio Profile NFT</a>
-  </h4>
+  <h2>Token Gating Discord Bot</h2>
+  <p>Xenea Discord Bot allows you to gate Discord channels to certain users who hold a certain amount of NFT tokens or
+    ERC20 tokens. This can be installed on any Discord server and configured with your own tokens and roles.</p>
+  <p><a href="https://discord.com/oauth2/authorize?client_id=1248189350177669150" target="_blank">Install Xenea Bot to
+      your Discord Server</a></p>
+  <p><a href="https://github.com/Salmandabbakuti/xenea-discord-bot" target="_blank">View Documentation</a></p>
   <div class="container">
-    <h2>Verify your wallet to join the exclusive gated Discord channel</h2>
     <p id="address"></p>
-    <button onclick="authorize()">Lets Go!</button>
+    <button onclick="authorize()">Verify Wallet</button>
     <div id="log">
       Hey there! Are you ready to authorize? Let's do this, ser!👋
     </div>
@@ -124,7 +148,7 @@
           "Oh great, another user trying to authorize without a token. Let's just print some error messages and see if they notice... 🙄"
         );
         return (logDiv.innerHTML =
-          "No JWT token provided. Please use the link provided by SuperApp Bot");
+          "No JWT token provided. Please use the link provided by XeneaGuard Bot");
       }
       if (!window.ethereum)
         return (logDiv.innerHTML =
@@ -139,7 +163,7 @@
         const provider = new ethers.providers.Web3Provider(window.ethereum);
         const signer = provider.getSigner();
         const message = [
-          "Welcome to  CrossValue Token Gated Discord Portal. This site is requesting your signature to approve login authorization!",
+          "Welcome to Xenea Token Gated Discord Portal. This site is requesting your signature to approve login authorization!",
           "Click to sign in and accept the terms and conditions (https://example.org/) of this app.",
           "This request will not trigger a blockchain transaction or cost any gas fees.",
           `Wallet Address: ${address}`,
@@ -175,7 +199,7 @@
 
 <footer>
   <hr />
-  <h5 style="text-align: right">&copy Salman Dabbakuti</h5>
+  <h5>&copy; 2024 Xenea Discord Bot</h5>
 </footer>
 
 </html>

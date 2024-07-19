@@ -14,13 +14,15 @@ const { arrayify } = require("@ethersproject/bytes");
 const { hashMessage } = require("@ethersproject/hash");
 const { JsonRpcProvider } = require("@ethersproject/providers");
 const { Contract } = require("@ethersproject/contracts");
+const { isAddress } = require("@ethersproject/address");
+const { formatUnits } = require("@ethersproject/units");
 const jwt = require("jsonwebtoken");
+const prisma = require("./prisma");
+const { deployCommands } = require("./utils");
 
 const {
   DISCORD_BOT_TOKEN,
-  DISCORD_SERVER_START_HERE_CHANNEL_ID,
   RPC_URL,
-  REQUIRED_MINIMUM_BALANCE,
   APP_URL,
   JWT_SECRET
 } = require("./config");
@@ -30,19 +32,12 @@ app.use(express.json());
 
 const provider = new JsonRpcProvider(RPC_URL);
 
-
-// LinkFolio contract on CVC Kura
-const linkFolioAbi = [
-  "function balanceOf(address account) view returns (uint256)"
+// compatile with erc20/erc721
+const tokenABI = [
+  "function balanceOf(address account) view returns (uint256)",
+  "function decimals() view returns (uint8)"
 ];
 
-const linkFolioAddress = "0xF12d01e64E4A17976b532C72A9C2fCe57b57654A";
-
-const linkFolioContract = new Contract(
-  linkFolioAddress,
-  linkFolioAbi,
-  provider
-);
 
 const client = new Client({
   intents: [
@@ -60,13 +55,40 @@ client.once(Events.ClientReady, () =>
   console.log(`Logged in as ${client.user.tag}`)
 );
 
-client.on(Events.GuildMemberAdd, (member) => {
+client.on(Events.GuildCreate, async (guild) => {
+  console.log("Bot added to guild", guild.name);
+  //deploy slash commands on the joined guild
+  await deployCommands(guild.id).catch((err) => {
+    console.log("Failed to deploy commands", err);
+  });
+});
+
+client.on(Events.GuildDelete, async (guild) => {
+  console.log("Bot removed from guild", guild.name);
+  //delete the guild from the db
+  await prisma.serverConfig.delete({
+    where: { guildId: guild.id }
+  }).catch((err) => {
+    console.log("Failed to delete server config", err);
+  });
+});
+
+client.on(Events.GuildMemberAdd, async (member) => {
   console.log("a new member hopped into server", member.user.tag);
-  const startHereChannel = member.guild.channels.cache.get(
-    DISCORD_SERVER_START_HERE_CHANNEL_ID
-  );
+  //get starthere channel from server config table
+  const serverConfig = await prisma.serverConfig.findUnique({
+    where: { guildId: member.guild.id },
+  });
+
+  if (!serverConfig) {
+    console.log("Server not configured.");
+    return;
+  }
+  const startHereChannel = member.guild.channels.cache.get(serverConfig.startChannelId);
+  if (!startHereChannel) return;
+
   startHereChannel.send({
-    content: `Welcome, ${member.user.username}. We hope you brought pizza! Please type \`/verify\` command to verify your wallet and get access to our exclusive channels and perks!`
+    content: `Welcome, <@${member.id}>. We hope you brought pizza! Please type \`/verify\` command to verify your wallet and get access to our exclusive channels and perks!`
   });
 });
 
@@ -74,15 +96,17 @@ client.on(Events.GuildMemberRemove, (member) => {
   console.log("a member left the server", member.user.tag, member.id);
 });
 
-client.on(Events.MessageCreate, (msg) => {
+client.on(Events.MessageCreate, async (msg) => {
   console.log("Message received", msg.content);
-  if (
-    msg.author.bot ||
-    msg.system ||
-    msg.channelId !== DISCORD_SERVER_START_HERE_CHANNEL_ID ||
-    msg.channel.type === "DM"
-  )
-    return;
+  if (msg.author.bot || msg.system || msg.channel.type === "DM") return;
+
+  const serverConfig = await prisma.serverConfig.findUnique({
+    where: { guildId: msg.guildId },
+  });
+
+  if (!serverConfig) return msg.reply("Server not configured. If you are an admin, please configure the server with `/serverconfig` command");
+
+  if (msg.channelId !== serverConfig.startChannelId) return;
 
   // Basic command handler
   const commands = {
@@ -99,6 +123,7 @@ client.on(Events.MessageCreate, (msg) => {
     const possibleCommands = [
       "/ping",
       "/verify",
+      "/serverconfig",
       ...Object.keys(commands)
     ].join(", ");
     msg.reply(
@@ -107,7 +132,7 @@ client.on(Events.MessageCreate, (msg) => {
   }
 });
 
-client.on(Events.InteractionCreate, (interaction) => {
+client.on(Events.InteractionCreate, async (interaction) => {
   console.log("Interaction received", interaction.commandName);
   if (!interaction.isChatInputCommand()) return;
   if (interaction.commandName === "ping") {
@@ -115,18 +140,74 @@ client.on(Events.InteractionCreate, (interaction) => {
       content: "pong!",
       ephemeral: true
     });
+  } else if (interaction.commandName === "serverconfig") {
+    // get tokenAddress, minimumBalance, startChannelId, roleId from interaction options
+    const tokenAddress = interaction.options.getString("tokenaddress");
+    //check if address is valid
+    if (!isAddress(tokenAddress)) {
+      return interaction.reply({
+        content: "Invalid token address",
+        ephemeral: true
+      });
+    }
+    const minimumBalance = interaction.options.getInteger("minimumbalance");
+    const startChannelId = interaction.options.getChannel("startchannel").id;
+    const roleId = interaction.options.getRole("role").id;
+    console.log({ tokenAddress, minimumBalance, startChannelId, roleId });
+
+    // only allow server owner to configure the server
+    if (interaction.member.user.id !== interaction.guild.ownerId) {
+      return interaction.reply({
+        content: "You are not authorized to configure the server.",
+        ephemeral: true
+      });
+    }
+
+    // save server config to db
+    await prisma.serverConfig.upsert({
+      where: { guildId: interaction.guildId },
+      update: {
+        tokenAddress,
+        minimumBalance,
+        startChannelId,
+        roleId
+      },
+      create: {
+        guildId: interaction.guildId,
+        tokenAddress,
+        minimumBalance,
+        startChannelId,
+        gateChannelId: "",
+        roleId
+      }
+    }).catch((err) => {
+      console.log("Failed to save server config", err);
+    });
+
+    interaction.reply({
+      content: "Server configured successfully!",
+      ephemeral: true
+    });
+
   } else if (interaction.commandName === "verify") {
     // Verify command logic: TBD
+    const serverConfig = await prisma.serverConfig.findUnique({
+      where: { guildId: interaction.guildId },
+    });
+
+    if (!serverConfig) return interaction.reply({ content: "Server not configured. Ask server admin to configure the server with `/serverconfig` command", ephemeral: true });
+
     const jwtToken = jwt.sign(
-      { guildId: interaction.guildId, memberId: interaction.member.id },
+      { configId: serverConfig.id, guildId: interaction.guildId, memberId: interaction.member.id },
       JWT_SECRET,
       { expiresIn: "5m" } // 5 minutes
     );
+    const { tokenAddress, minimumBalance } = serverConfig;
     const greeting = "Hello there! Welcome to the server!";
     const steps = [
       `Please Click on Verify with Wallet to verify your wallet address.`,
-      "Make sure you have at least 1 LinkFolio Profile minted to wallet to be verified. Please go to https://linkfol-io.vercel.app/ to create a LinkFolio Profile",
-      "Once verified, you'll be automatically assigned the CVC Insider role which will give you access to our exclusive channels and perks!"
+      `Make sure you have at least ${minimumBalance} tokens of the token at address \`${tokenAddress}\` in your wallet.`,
+      "Once verified, you'll be automatically assigned the gated role which will give you access to our exclusive channels and perks!"
     ];
     const outro =
       "If you have any questions or encounter any issues, please don't hesitate to reach out to us. Good luck and have fun!";
@@ -137,13 +218,13 @@ client.on(Events.InteractionCreate, (interaction) => {
       .setStyle(ButtonStyle.Link)
       .setURL(`${APP_URL}/verify?token=${jwtToken}`);
 
-    const linkfolioButton = new ButtonBuilder()
-      .setLabel("LinkFolio")
+    const tokenExplorerButton = new ButtonBuilder()
+      .setLabel("View Token on Explorer")
       .setStyle(ButtonStyle.Link)
-      .setURL(`https://linkfol-io.vercel.app/`);
+      .setURL(`https://testnet.crossvaluescan.com/token/${tokenAddress}`);
     const actionRow = new ActionRowBuilder().addComponents(
       verifyWithWalletButton,
-      linkfolioButton
+      tokenExplorerButton
     );
     interaction.reply({
       content: message,
@@ -178,36 +259,58 @@ app.post("/verify", async (req, res) => {
         .status(401)
         .send({ code: "Unauthorized", message: "Invalid wallet signature" });
 
-    // const userBalance = await provider.getBalance(address);
-    // must possess at least 1 LIFO to be verified 
-    const userBalance = await linkFolioContract.balanceOf(address);
-    console.log("user LIFO balance", userBalance.toString());
+    // get serverconfig
+    const serverConfig = await prisma.serverConfig.findUnique({
+      where: { guildId },
+    });
+
+    if (!serverConfig) {
+      return res.status(500).json({
+        code: "Internal Server Error",
+        message: "Server not configured."
+      });
+    }
+    const { tokenAddress, minimumBalance, startChannelId, roleId } = serverConfig;
+
+    const tokenContract = new Contract(tokenAddress, tokenABI, provider);
+    // try checking erc20/721 by calling decimals
+    let userBalance = 0;
+    try {
+      // erc20
+      console.log("trying to get erc20 balance");
+      const decimals = await tokenContract.decimals();
+      console.log("erc20 token decimals", decimals);
+      const balanceWei = await tokenContract.balanceOf(address);
+      userBalance = formatUnits(balanceWei, decimals);
+    } catch (err) {
+      // erc721
+      console.log("failed to get erc20 balance. trying erc721 balance", err);
+      userBalance = await tokenContract.balanceOf(address).catch((err) => {
+        console.log("failed to get erc721 balance. returning", err);
+        return;
+      });
+    }
+    console.log("user token balance", userBalance);
 
     const guild = client.guilds.cache.get(guildId);
     const member = await guild.members.fetch(memberId);
-    const startHereChannel = guild.channels.cache.get(
-      DISCORD_SERVER_START_HERE_CHANNEL_ID
-    );
+    const startHereChannel = guild.channels.cache.get(startChannelId);
     const truncatedAddress = address.slice(0, 5) + "..." + address.slice(-4);
 
-    const hasRequiredBalance = userBalance.gte(1n);
+    const hasRequiredBalance = userBalance >= minimumBalance;
 
-    // add member role by default upon verifying wallet
-    const memberRole = guild.roles.cache.find((role) => role.name === "member");
-    await member.roles.add(memberRole);
+    // const memberRole = guild.roles.cache.find((role) => role.name === "member");
+    // await member.roles.add(memberRole);
 
     if (hasRequiredBalance) {
-      const cvcInsiderRole = guild.roles.cache.find(
-        (role) => role.name === "CVC Insider"
-      );
-      // add CVC InsiderRole role if user has enough balance
-      await member.roles.add(cvcInsiderRole);
+      const gatedRole = guild.roles.cache.find((role) => role.id === roleId);
+      await member.roles.add(gatedRole);
       startHereChannel.send(
-        `Hey <@${memberId}>, your wallet address ${truncatedAddress} has been verified and you have been given the CVC Insider role. You can now access the #crossvalue-exclusive channel.`
+        `Hey <@${memberId}>, your wallet address ${truncatedAddress} has been verified and you have been given ${gatedRole.name} role. You can now access the gated channels.`
       );
     } else {
       startHereChannel.send(
-        `Hey <@${memberId}>, your wallet address ${truncatedAddress} has been verified and you have been given member role. but, you do not have LinkFolio Profile minted to wallet. Please go to https://linkfol-io.vercel.app/ to create a LinkFolio Profile and come back to access the #crossvalue-exclusive channel.`
+        `Hey <@${memberId}>, your wallet address ${truncatedAddress} has been verified. but, you do not have the required balance of tokens in your wallet. Please make sure you have at least ${minimumBalance} tokens of the token at address \`${tokenAddress}\` in your wallet.`
       );
     }
     return res.status(200).json({ code: "ok", message: "Success" });
