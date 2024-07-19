@@ -1,5 +1,5 @@
 const { REST, Routes } = require("discord.js");
-const { DISCORD_BOT_TOKEN, DISCORD_SERVER_APPLICATION_ID } = require("./config.js");
+const { DISCORD_BOT_TOKEN, DISCORD_BOT_APPLICATION_ID } = require("./config.js");
 
 const commands = [
   {
@@ -55,7 +55,7 @@ const deployCommands = async (guildId) => {
   try {
     // The put method is used to fully refresh all commands in the guild with the current set
     const data = await rest.put(
-      Routes.applicationGuildCommands(DISCORD_SERVER_APPLICATION_ID, guildId),
+      Routes.applicationGuildCommands(DISCORD_BOT_APPLICATION_ID, guildId),
       { body: commands }
     );
 
