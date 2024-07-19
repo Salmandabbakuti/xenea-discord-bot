@@ -31,7 +31,8 @@ app.use(express.json());
 
 const provider = new JsonRpcProvider(RPC_URL);
 
-const erc20Abi = [
+// compatile with erc20/erc721
+const tokenABI = [
   "function balanceOf(address account) view returns (uint256)"
 ];
 
@@ -208,7 +209,7 @@ app.post("/verify", async (req, res) => {
     }
     const { tokenAddress, minimumBalance, startChannelId } = serverConfig;
 
-    const tokenContract = new Contract(tokenAddress, erc20Abi, provider);
+    const tokenContract = new Contract(tokenAddress, tokenABI, provider);
     const userBalance = await tokenContract.balanceOf(address);
     console.log("user token balance", userBalance.toString());
 
