@@ -12,33 +12,33 @@ const commands = [
   {
     name: "verify",
     description:
-      "Verify your wallet to access exclusive server channels",
+      "Verify your wallet to access gated channels",
   },
   {
     name: "serverconfig",
-    description: "Configure the server",
+    description: "Configure server settings for verification/gating by admin",
     options: [
       {
         name: "tokenaddress",
-        description: "Token Address",
+        description: "Contract address of ERC20/721 token for gating access",
         type: 3,
         required: true
       },
       {
         name: "minimumbalance",
-        description: "Minimum Balance",
+        description: "Required minimum balance to assign gated role",
         type: 4,
         required: true
       },
       {
         name: "startchannel",
-        description: "Start Channel",
+        description: "Channel to receive informational messages from bot",
         type: 7,
         required: true
       },
       {
         name: "role",
-        description: "Role to assign",
+        description: "Role to assign to verified users",
         type: 8,
         required: true
       }
@@ -50,7 +50,7 @@ const rest = new REST().setToken(DISCORD_BOT_TOKEN);
 
 const deployCommands = async (guildId) => {
   console.log(
-    `Started refreshing ${commands.length} application (/) commands.`
+    `Started deploying ${commands.length} application (/) commands on guild ${guildId}.`
   );
   try {
     // The put method is used to fully refresh all commands in the guild with the current set
@@ -60,11 +60,11 @@ const deployCommands = async (guildId) => {
     );
 
     console.log(
-      `Successfully reloaded ${data.length} application (/) commands.`
+      `Successfully deployed ${data.length} application (/) commands.`
     );
   } catch (error) {
     // And of course, make sure you catch and log any errors!
-    console.error("Error while refreshing application (/) commands:", error);
+    console.error("Error while deploying application (/) commands:", guildId, error);
   }
 };
 

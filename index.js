@@ -53,10 +53,21 @@ client.once(Events.ClientReady, () =>
 );
 
 client.on(Events.GuildCreate, async (guild) => {
-  console.log("New guild joined", guild.name);
-  //deploy slash commands for the guild ping verify serverconfig with options
-  await deployCommands(guild.id);
+  console.log("Bot added to guild", guild.name);
+  //deploy slash commands on the joined guild
+  await deployCommands(guild.id).catch((err) => {
+    console.log("Failed to deploy commands", err);
+  });
+});
 
+client.on(Events.GuildDelete, async (guild) => {
+  console.log("Bot removed from guild", guild.name);
+  //delete the guild from the db
+  await prisma.serverConfig.delete({
+    where: { guildId: guild.id }
+  }).catch((err) => {
+    console.log("Failed to delete server config", err);
+  });
 });
 
 client.on(Events.GuildMemberAdd, async (member) => {
@@ -70,8 +81,6 @@ client.on(Events.GuildMemberAdd, async (member) => {
     console.log("Server not configured.");
     return;
   }
-
-
   const startHereChannel = member.guild.channels.cache.get(serverConfig.startChannelId);
   if (!startHereChannel) return;
 
@@ -168,6 +177,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
         gateChannelId: "",
         roleId
       }
+    }).catch((err) => {
+      console.log("Failed to save server config", err);
     });
 
     interaction.reply({
