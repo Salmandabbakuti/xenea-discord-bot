@@ -17,10 +17,10 @@ model ServerConfig {
   id             String   @id @default(uuid())
   guildId        String   @unique
   startChannelId String
-  gateChannelId  String
+  gateChannelId  String   @default("")
   roleId         String
   tokenAddress   String
-  minimumBalance String
+  minimumBalance Float
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }

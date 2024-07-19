@@ -14,14 +14,14 @@ const { arrayify } = require("@ethersproject/bytes");
 const { hashMessage } = require("@ethersproject/hash");
 const { JsonRpcProvider } = require("@ethersproject/providers");
 const { Contract } = require("@ethersproject/contracts");
+const { isAddress } = require("@ethersproject/address");
 const jwt = require("jsonwebtoken");
 const prisma = require("./prisma");
+const { deployCommands } = require("./utils");
 
 const {
   DISCORD_BOT_TOKEN,
-  DISCORD_SERVER_START_HERE_CHANNEL_ID,
   RPC_URL,
-  REQUIRED_MINIMUM_BALANCE,
   APP_URL,
   JWT_SECRET
 } = require("./config");
@@ -52,6 +52,13 @@ client.once(Events.ClientReady, () =>
   console.log(`Logged in as ${client.user.tag}`)
 );
 
+client.on(Events.GuildCreate, async (guild) => {
+  console.log("New guild joined", guild.name);
+  //deploy slash commands for the guild ping verify serverconfig with options
+  await deployCommands(guild.id);
+
+});
+
 client.on(Events.GuildMemberAdd, async (member) => {
   console.log("a new member hopped into server", member.user.tag);
   //get starthere channel from server config table
@@ -69,7 +76,7 @@ client.on(Events.GuildMemberAdd, async (member) => {
   if (!startHereChannel) return;
 
   startHereChannel.send({
-    content: `Welcome, ${member.user.username}. We hope you brought pizza! Please type \`/verify\` command to verify your wallet and get access to our exclusive channels and perks!`
+    content: `Welcome, <@${member.id}>. We hope you brought pizza! Please type \`/verify\` command to verify your wallet and get access to our exclusive channels and perks!`
   });
 });
 
@@ -85,10 +92,7 @@ client.on(Events.MessageCreate, async (msg) => {
     where: { guildId: msg.guildId },
   });
 
-  if (!serverConfig) {
-    msg.reply("Server not configured.");
-    return;
-  }
+  if (!serverConfig) return msg.reply("Server not configured. If you are an admin, please configure the server with `/serverconfig` command");
 
   if (msg.channelId !== serverConfig.startChannelId) return;
 
@@ -107,6 +111,7 @@ client.on(Events.MessageCreate, async (msg) => {
     const possibleCommands = [
       "/ping",
       "/verify",
+      "/serverconfig",
       ...Object.keys(commands)
     ].join(", ");
     msg.reply(
@@ -119,32 +124,77 @@ client.on(Events.InteractionCreate, async (interaction) => {
   console.log("Interaction received", interaction.commandName);
   if (!interaction.isChatInputCommand()) return;
 
-  const serverConfig = await prisma.serverConfig.findUnique({
-    where: { guildId: interaction.guildId },
-  });
+  // const serverConfig = await prisma.serverConfig.findUnique({
+  //   where: { guildId: interaction.guildId },
+  // });
 
-  if (!serverConfig) {
-    interaction.reply({ content: "Server not configured.", ephemeral: true });
-    return;
-  }
+  // if (!serverConfig) return interaction.reply({ content: "Server not configured. If you are an admin, please configure the server with `/serverconfig` command", ephemeral: true });
 
   if (interaction.commandName === "ping") {
     interaction.reply({
       content: "pong!",
       ephemeral: true
     });
+  } else if (interaction.commandName === "serverconfig") {
+    // get tokenAddress, minimumBalance, startChannelId, roleId from interaction options
+    const tokenAddress = interaction.options.getString("tokenaddress");
+    //check if address is valid
+    if (!isAddress(tokenAddress)) {
+      return interaction.reply({
+        content: "Invalid token address",
+        ephemeral: true
+      });
+    }
+    const minimumBalance = interaction.options.getInteger("minimumbalance");
+    const startChannelId = interaction.options.getChannel("startchannel").id;
+    const roleId = interaction.options.getRole("role").id;
+    console.log({ tokenAddress, minimumBalance, startChannelId, roleId });
+
+    // only allow server owner to configure the server
+    if (interaction.member.user.id !== interaction.guild.ownerId) {
+      return interaction.reply({
+        content: "You are not authorized to configure the server.",
+        ephemeral: true
+      });
+    }
+
+    // save server config to db
+    await prisma.serverConfig.upsert({
+      where: { guildId: interaction.guildId },
+      update: {
+        tokenAddress,
+        minimumBalance,
+        startChannelId,
+        roleId
+      },
+      create: {
+        guildId: interaction.guildId,
+        tokenAddress,
+        minimumBalance,
+        startChannelId,
+        gateChannelId: "",
+        roleId
+      }
+    });
+
+    interaction.reply({
+      content: "Server configured successfully!",
+      ephemeral: true
+    });
+
   } else if (interaction.commandName === "verify") {
     // Verify command logic: TBD
     const jwtToken = jwt.sign(
-      { guildId: interaction.guildId, memberId: interaction.member.id },
+      { configId: serverConfig.id, guildId: interaction.guildId, memberId: interaction.member.id },
       JWT_SECRET,
       { expiresIn: "5m" } // 5 minutes
     );
+    const { tokenAddress, minimumBalance } = serverConfig;
     const greeting = "Hello there! Welcome to the server!";
     const steps = [
       `Please Click on Verify with Wallet to verify your wallet address.`,
-      "Make sure you have at least 1 LinkFolio Profile minted to wallet to be verified. Please go to https://linkfol-io.vercel.app/ to create a LinkFolio Profile",
-      "Once verified, you'll be automatically assigned the CVC Insider role which will give you access to our exclusive channels and perks!"
+      "Make sure you have the required minimum balance of tokens in your wallet.",
+      "Once verified, you'll be automatically assigned the gated role which will give you access to our exclusive channels and perks!"
     ];
     const outro =
       "If you have any questions or encounter any issues, please don't hesitate to reach out to us. Good luck and have fun!";
@@ -155,13 +205,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
       .setStyle(ButtonStyle.Link)
       .setURL(`${APP_URL}/verify?token=${jwtToken}`);
 
-    const linkfolioButton = new ButtonBuilder()
-      .setLabel("LinkFolio")
+    const tokenExplorerButton = new ButtonBuilder()
+      .setLabel("View Token on Explorer")
       .setStyle(ButtonStyle.Link)
-      .setURL(`https://linkfol-io.vercel.app/`);
+      .setURL(`https://testnet.crossvaluescan.com/token/${tokenAddress}`);
     const actionRow = new ActionRowBuilder().addComponents(
       verifyWithWalletButton,
-      linkfolioButton
+      tokenExplorerButton
     );
     interaction.reply({
       content: message,
@@ -207,7 +257,7 @@ app.post("/verify", async (req, res) => {
         message: "Server not configured."
       });
     }
-    const { tokenAddress, minimumBalance, startChannelId } = serverConfig;
+    const { tokenAddress, minimumBalance, startChannelId, roleId } = serverConfig;
 
     const tokenContract = new Contract(tokenAddress, tokenABI, provider);
     const userBalance = await tokenContract.balanceOf(address);
@@ -220,18 +270,18 @@ app.post("/verify", async (req, res) => {
 
     const hasRequiredBalance = userBalance.gte(minimumBalance);
 
-    const memberRole = guild.roles.cache.find((role) => role.name === "member");
-    await member.roles.add(memberRole);
+    // const memberRole = guild.roles.cache.find((role) => role.name === "member");
+    // await member.roles.add(memberRole);
 
     if (hasRequiredBalance) {
-      const cvcInsiderRole = guild.roles.cache.find((role) => role.name === "CVC Insider");
-      await member.roles.add(cvcInsiderRole);
+      const gatedRole = guild.roles.cache.find((role) => role.id === roleId);
+      await member.roles.add(gatedRole);
       startHereChannel.send(
         `Hey <@${memberId}>, your wallet address ${truncatedAddress} has been verified and you have been given the CVC Insider role. You can now access the #crossvalue-exclusive channel.`
       );
     } else {
       startHereChannel.send(
-        `Hey <@${memberId}>, your wallet address ${truncatedAddress} has been verified and you have been given member role. but, you do not have LinkFolio Profile minted to wallet. Please go to https://linkfol-io.vercel.app/ to create a LinkFolio Profile and come back to access the #crossvalue-exclusive channel.`
+        `Hey <@${memberId}>, your wallet address ${truncatedAddress} has been verified. but, you do not have LinkFolio Profile minted to wallet. Please go to https://linkfol-io.vercel.app/ to create a LinkFolio Profile and come back to access the #crossvalue-exclusive channel.`
       );
     }
     return res.status(200).json({ code: "ok", message: "Success" });
