@@ -15,6 +15,7 @@ const { hashMessage } = require("@ethersproject/hash");
 const { JsonRpcProvider } = require("@ethersproject/providers");
 const { Contract } = require("@ethersproject/contracts");
 const { isAddress } = require("@ethersproject/address");
+const { formatUnits } = require("@ethersproject/units");
 const jwt = require("jsonwebtoken");
 const prisma = require("./prisma");
 const { deployCommands } = require("./utils");
@@ -33,8 +34,10 @@ const provider = new JsonRpcProvider(RPC_URL);
 
 // compatile with erc20/erc721
 const tokenABI = [
-  "function balanceOf(address account) view returns (uint256)"
+  "function balanceOf(address account) view returns (uint256)",
+  "function decimals() view returns (uint8)"
 ];
+
 
 const client = new Client({
   intents: [
@@ -270,15 +273,31 @@ app.post("/verify", async (req, res) => {
     const { tokenAddress, minimumBalance, startChannelId, roleId } = serverConfig;
 
     const tokenContract = new Contract(tokenAddress, tokenABI, provider);
-    const userBalance = await tokenContract.balanceOf(address);
-    console.log("user token balance", userBalance.toString());
+    // try checking erc20/721 by calling decimals
+    let userBalance = 0;
+    try {
+      // erc20
+      console.log("trying to get erc20 balance");
+      const decimals = await tokenContract.decimals();
+      console.log("erc20 token decimals", decimals);
+      const balanceWei = await tokenContract.balanceOf(address);
+      userBalance = formatUnits(balanceWei, decimals);
+    } catch (err) {
+      // erc721
+      console.log("failed to get erc20 balance. trying erc721 balance", err);
+      userBalance = await tokenContract.balanceOf(address).catch((err) => {
+        console.log("failed to get erc721 balance. returning", err);
+        return;
+      });
+    }
+    console.log("user token balance", userBalance);
 
     const guild = client.guilds.cache.get(guildId);
     const member = await guild.members.fetch(memberId);
     const startHereChannel = guild.channels.cache.get(startChannelId);
     const truncatedAddress = address.slice(0, 5) + "..." + address.slice(-4);
 
-    const hasRequiredBalance = userBalance.gte(minimumBalance);
+    const hasRequiredBalance = userBalance >= minimumBalance;
 
     // const memberRole = guild.roles.cache.find((role) => role.name === "member");
     // await member.roles.add(memberRole);
