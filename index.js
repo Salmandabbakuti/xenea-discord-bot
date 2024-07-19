@@ -123,13 +123,6 @@ client.on(Events.MessageCreate, async (msg) => {
 client.on(Events.InteractionCreate, async (interaction) => {
   console.log("Interaction received", interaction.commandName);
   if (!interaction.isChatInputCommand()) return;
-
-  // const serverConfig = await prisma.serverConfig.findUnique({
-  //   where: { guildId: interaction.guildId },
-  // });
-
-  // if (!serverConfig) return interaction.reply({ content: "Server not configured. If you are an admin, please configure the server with `/serverconfig` command", ephemeral: true });
-
   if (interaction.commandName === "ping") {
     interaction.reply({
       content: "pong!",
@@ -184,6 +177,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   } else if (interaction.commandName === "verify") {
     // Verify command logic: TBD
+    const serverConfig = await prisma.serverConfig.findUnique({
+      where: { guildId: interaction.guildId },
+    });
+
+    if (!serverConfig) return interaction.reply({ content: "Server not configured. Ask server admin to configure the server with `/serverconfig` command", ephemeral: true });
+
     const jwtToken = jwt.sign(
       { configId: serverConfig.id, guildId: interaction.guildId, memberId: interaction.member.id },
       JWT_SECRET,
@@ -193,7 +192,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const greeting = "Hello there! Welcome to the server!";
     const steps = [
       `Please Click on Verify with Wallet to verify your wallet address.`,
-      "Make sure you have the required minimum balance of tokens in your wallet.",
+      `Make sure you have at least ${minimumBalance} tokens of the token at address \`${tokenAddress}\` in your wallet.`,
       "Once verified, you'll be automatically assigned the gated role which will give you access to our exclusive channels and perks!"
     ];
     const outro =
@@ -277,11 +276,11 @@ app.post("/verify", async (req, res) => {
       const gatedRole = guild.roles.cache.find((role) => role.id === roleId);
       await member.roles.add(gatedRole);
       startHereChannel.send(
-        `Hey <@${memberId}>, your wallet address ${truncatedAddress} has been verified and you have been given the CVC Insider role. You can now access the #crossvalue-exclusive channel.`
+        `Hey <@${memberId}>, your wallet address ${truncatedAddress} has been verified and you have been given ${gatedRole.name} role. You can now access the gated channels.`
       );
     } else {
       startHereChannel.send(
-        `Hey <@${memberId}>, your wallet address ${truncatedAddress} has been verified. but, you do not have LinkFolio Profile minted to wallet. Please go to https://linkfol-io.vercel.app/ to create a LinkFolio Profile and come back to access the #crossvalue-exclusive channel.`
+        `Hey <@${memberId}>, your wallet address ${truncatedAddress} has been verified. but, you do not have the required balance of tokens in your wallet. Please make sure you have at least ${minimumBalance} tokens of the token at address \`${tokenAddress}\` in your wallet.`
       );
     }
     return res.status(200).json({ code: "ok", message: "Success" });
