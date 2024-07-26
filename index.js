@@ -287,7 +287,6 @@ app.post("/verify", async (req, res) => {
       console.log("failed to get erc20 balance. trying erc721 balance", err);
       userBalance = await tokenContract.balanceOf(address).catch((err) => {
         console.log("failed to get erc721 balance. returning", err);
-        return;
       });
     }
     console.log("user token balance", userBalance);
@@ -298,9 +297,6 @@ app.post("/verify", async (req, res) => {
     const truncatedAddress = address.slice(0, 5) + "..." + address.slice(-4);
 
     const hasRequiredBalance = userBalance >= minimumBalance;
-
-    // const memberRole = guild.roles.cache.find((role) => role.name === "member");
-    // await member.roles.add(memberRole);
 
     if (hasRequiredBalance) {
       const gatedRole = guild.roles.cache.find((role) => role.id === roleId);
@@ -321,6 +317,8 @@ app.post("/verify", async (req, res) => {
       .json({ code: "Internal Server Error", message: err.message });
   }
 });
+
+app.get("/", (req, res) => res.redirect("verify"));
 
 app.get("/verify", (req, res) =>
   res.sendFile(__dirname + "/public/index.html")
