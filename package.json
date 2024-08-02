@@ -15,17 +15,10 @@
     "prisma": "^5.17.0"
   },
   "dependencies": {
-    "@ethersproject/address": "^5.7.0",
-    "@ethersproject/bytes": "^5.7.0",
-    "@ethersproject/contracts": "^5.7.0",
-    "@ethersproject/hash": "^5.7.0",
-    "@ethersproject/providers": "^5.7.2",
-    "@ethersproject/transactions": "^5.7.0",
-    "@ethersproject/units": "^5.7.0",
     "@prisma/client": "^5.17.0",
-    "cors": "^2.8.5",
     "discord.js": "^14.15.3",
     "dotenv": "^16.4.5",
+    "ethers": "^6.13.2",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2"
   }

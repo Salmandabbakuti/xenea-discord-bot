@@ -4,7 +4,6 @@
 <head>
   <meta charset="UTF-8" />
   <title>Xenea Discord Bot - Token Gated Channels</title>
-  <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -134,7 +133,8 @@
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    import { ethers } from "https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.min.js";
     const token = new URL(window.location.href).searchParams.get("token");
     const logDiv = document.getElementById("log");
     console.log(token);
@@ -160,8 +160,8 @@
 
         document.getElementById("address").innerHTML = `Your wallet address: ${address}`;
 
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const signer = provider.getSigner();
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
 
         const message = [
           "Welcome to Xenea Token Gated Discord Portal. This site is requesting your signature to approve login authorization!",
@@ -200,6 +200,7 @@
         logDiv.innerHTML = `Something went wrong! ${err.message}`;
       }
     }
+    window.authorize = authorize;
   </script>
 </body>
 
