@@ -1,5 +1,4 @@
 const express = require("express");
-const cors = require("cors");
 const {
   Client,
   GatewayIntentBits,
@@ -9,13 +8,7 @@ const {
   ActionRowBuilder,
   ButtonStyle
 } = require("discord.js");
-const { recoverAddress } = require("@ethersproject/transactions");
-const { arrayify } = require("@ethersproject/bytes");
-const { hashMessage } = require("@ethersproject/hash");
-const { JsonRpcProvider } = require("@ethersproject/providers");
-const { Contract } = require("@ethersproject/contracts");
-const { isAddress } = require("@ethersproject/address");
-const { formatUnits } = require("@ethersproject/units");
+const { Contract, formatUnits, isAddress, JsonRpcProvider, verifyMessage } = require("ethers");
 const jwt = require("jsonwebtoken");
 const prisma = require("./prisma");
 const { deployCommands } = require("./utils");
@@ -29,6 +22,7 @@ const {
 
 const app = express();
 app.use(express.json());
+app.use(express.static("public"));
 
 const provider = new JsonRpcProvider(RPC_URL);
 
@@ -104,7 +98,7 @@ client.on(Events.MessageCreate, async (msg) => {
     where: { guildId: msg.guildId },
   });
 
-  if (!serverConfig) return msg.reply("Server not configured. If you are an admin, please configure the server with `/serverconfig` command");
+  if (!serverConfig) return msg.reply("Server not configured. If you are an admin, please configure the server with `/set-serverconfig` command");
 
   if (msg.channelId !== serverConfig.startChannelId) return;
 
@@ -123,7 +117,8 @@ client.on(Events.MessageCreate, async (msg) => {
     const possibleCommands = [
       "/ping",
       "/verify",
-      "/serverconfig",
+      "/set-serverconfig",
+      "/get-serverconfig",
       ...Object.keys(commands)
     ].join(", ");
     msg.reply(
@@ -140,7 +135,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       content: "pong!",
       ephemeral: true
     });
-  } else if (interaction.commandName === "serverconfig") {
+  } else if (interaction.commandName === "set-serverconfig") {
     // get tokenAddress, minimumBalance, startChannelId, roleId from interaction options
     const tokenAddress = interaction.options.getString("tokenaddress");
     //check if address is valid
@@ -184,18 +179,52 @@ client.on(Events.InteractionCreate, async (interaction) => {
       console.log("Failed to save server config", err);
     });
 
+    // show success message with configured settings
+    const infoMessage = "Server configured successfully. Here are the settings:";
+    const settings = [
+      `Token Address: ${tokenAddress}`,
+      `Minimum Balance: ${minimumBalance}`,
+      `Start Channel: <#${startChannelId}>`,
+      `Role: <@&${roleId}>`
+    ];
+    const outro = "Server members can now use `/verify` command to verify their wallet and get gated role which give access to exclusive channels and perks!";
+    const message = infoMessage + "\n\n" + settings.join("\n") + "\n\n" + outro;
     interaction.reply({
-      content: "Server configured successfully!",
+      content: message,
       ephemeral: true
     });
 
+  } else if (interaction.commandName === "get-serverconfig") {
+    // get server config command logic
+    const serverConfig = await prisma.serverConfig.findUnique({
+      where: { guildId: interaction.guildId },
+    });
+
+    if (!serverConfig) {
+      return interaction.reply({
+        content: "Server not configured. Ask server admin to configure the server with `/set-serverconfig` command",
+        ephemeral: true
+      });
+    }
+
+    const settings = [
+      `Token Address: ${serverConfig.tokenAddress}`,
+      `Minimum Balance: ${serverConfig.minimumBalance}`,
+      `Start Channel: <#${serverConfig.startChannelId}>`,
+      `Role: <@&${serverConfig.roleId}>`
+    ];
+    const message = "Here are the server configuration settings:\n\n" + settings.join("\n");
+    interaction.reply({
+      content: message,
+      ephemeral: true
+    });
   } else if (interaction.commandName === "verify") {
     // Verify command logic: TBD
     const serverConfig = await prisma.serverConfig.findUnique({
       where: { guildId: interaction.guildId },
     });
 
-    if (!serverConfig) return interaction.reply({ content: "Server not configured. Ask server admin to configure the server with `/serverconfig` command", ephemeral: true });
+    if (!serverConfig) return interaction.reply({ content: "Server not configured. Ask server admin to configure the server with `/set-serverconfig` command", ephemeral: true });
 
     const jwtToken = jwt.sign(
       { configId: serverConfig.id, guildId: interaction.guildId, memberId: interaction.member.id },
@@ -252,8 +281,7 @@ app.post("/verify", async (req, res) => {
     const { guildId, memberId } = jwt.verify(token, JWT_SECRET);
     console.log("decoded from token", { guildId, memberId });
     console.log("verifying signature and checking balance");
-    const digest = arrayify(hashMessage(message));
-    const recoveredAddress = recoverAddress(digest, signature);
+    const recoveredAddress = verifyMessage(message, signature);
     if (recoveredAddress.toLowerCase() !== address.toLowerCase())
       return res
         .status(401)
@@ -273,30 +301,35 @@ app.post("/verify", async (req, res) => {
     const { tokenAddress, minimumBalance, startChannelId, roleId } = serverConfig;
 
     const tokenContract = new Contract(tokenAddress, tokenABI, provider);
+
+    let hasRequiredBalance = false;
     // try checking erc20/721 by calling decimals
-    let userBalance = 0;
     try {
       // erc20
       console.log("trying to get erc20 balance");
       const decimals = await tokenContract.decimals();
       console.log("erc20 token decimals", decimals);
       const balanceWei = await tokenContract.balanceOf(address);
-      userBalance = formatUnits(balanceWei, decimals);
+      const balance = parseFloat(formatUnits(balanceWei, decimals));
+      console.log(`ERC20 token balance: ${balance}, required: ${minimumBalance}`);
+      hasRequiredBalance = balance >= parseFloat(minimumBalance);
     } catch (err) {
       // erc721
-      console.log("failed to get erc20 balance. trying erc721 balance", err);
-      userBalance = await tokenContract.balanceOf(address).catch((err) => {
+      console.log("failed to get erc20 balance.", err);
+      console.log("trying to get erc721 balance");
+      const balance = await tokenContract.balanceOf(address).catch((err) => {
         console.log("failed to get erc721 balance. returning", err);
+        return 0n;
       });
+      console.log(`ERC721 token balance: ${balance}, required: ${minimumBalance}`);
+      hasRequiredBalance = balance >= BigInt(minimumBalance);
     }
-    console.log("user token balance", userBalance);
+    console.log("User has required balance?:", hasRequiredBalance);
 
     const guild = client.guilds.cache.get(guildId);
     const member = await guild.members.fetch(memberId);
     const startHereChannel = guild.channels.cache.get(startChannelId);
     const truncatedAddress = address.slice(0, 5) + "..." + address.slice(-4);
-
-    const hasRequiredBalance = userBalance >= minimumBalance;
 
     if (hasRequiredBalance) {
       const gatedRole = guild.roles.cache.find((role) => role.id === roleId);

@@ -16,9 +16,15 @@ The Xenea Gated Discord Bot facilitates secure and gated exclusive access to ser
 
 1. Install the Xenea bot on your Discord server. You can use the following link to add the bot to your server. [Add Bot to Server](https://discord.com/oauth2/authorize?client_id=1248189350177669150)
 
+![Screen1s-Installation](https://github.com/user-attachments/assets/10b48b79-cc6f-48c0-9955-d19833566a54)
+
+> If the bot doesn't have all the permissions listed above in image, it will not work as expected. Make sure to give all the permissions to the bot.
+
 2. Move the bot to the top of the role hierarchy in your server. This is required for the bot to assign roles to users. Settings -> Roles -> Drag the bot role to the top.
 
-3. Set up the server config(i.e token address, required balance, role to assign) using the command `/serverconfig` in the `#⁠start-here` channel on the server.
+![Screen6-role-hierarchy](https://github.com/user-attachments/assets/c23d2fd0-01dc-42a5-970f-83a6b01bb382)
+
+3. Set up the server config(i.e token address, required balance, role to assign) using the command `/set-serverconfig` in the `#⁠start-here` channel on the server.
 
 #### For Server Members
 
@@ -40,18 +46,57 @@ The Xenea Gated Discord Bot facilitates secure and gated exclusive access to ser
 
 ### Steps:
 
-Coming soon...
+1. Create a new Discord application and bot on the Discord Developer Portal. [Discord Developer Portal](https://discord.com/developers/applications)
+
+![Screen1-Create_App](https://github.com/user-attachments/assets/e080fd38-ad30-4df8-b43a-e89103dbe468)
+
+2. Go to the Bot tab in application settings and toggle all the necessary permissions for the bot as shown in the image below.
+
+![Screen2-Bot_Settings](https://github.com/user-attachments/assets/241f5d4f-7e3a-45c5-a25e-a6ef6706d3ea)
+
+3. Go to Installation tab and set Installation Contexts to "Guild Install" and then below in Default Installation Settings, choose scopes: "bot" and "applications.commands" and then in permissions, select the permissions you want to give to the bot. Make sure to select Following permissions: "Manage Roles", "Manage Channels", "Manage Messages", Send Messages", "Read Message History", "Use Slash Commands".
+
+![Screen3-Install_contexts](https://github.com/user-attachments/assets/9a527f2b-001c-410c-8cba-873291b2dc67)
+
+![Screen4-Install_permissions](https://github.com/user-attachments/assets/0a0e7fab-4361-4b50-8730-ad863be55aeb)
+
+4. Copy th Bot token from Bot tab and Application ID from General Information tab and add them to the .env file. `DISCORD_BOT_TOKEN=YOUR_BOT_TOKEN`, `DISCORD_CLIENT_ID=YOUR_APPLICATION_ID`
+
+5. Update the .env file with the `DATABASE_URL`, Xenea `RPC_URL`, `APP_URL`, and other necessary details.
+
+6. Install the dependencies using `npm install`.
+
+7. Sync the local schema to database by running `npx prisma db push` in the root directory
+
+8. Run the bot using `npm start`.
+
+9. Copy Install Link from Installation Tab in Application Settings and open it in the browser to add the bot to your server.
+
+![Screen5-Install_link](https://github.com/user-attachments/assets/2aec592c-8a36-40d2-9a13-2eea13490d47)
+
+Follow the steps in the [For Server Admins](#for-server-admins) section to set up the server config and for server members to verify their wallet.
+
+Follow the steps in the [For Server Members](#for-server-members) section to verify your wallet and gain access to the exclusive channels and perks on the server.
 
 ### Troubleshooting
 
 If you encounter any issues with the bot, please do the following:
 
-1. Check that the bot has the necessary permissions in the server (Manage Roles, Manage Channels, Manage Messages)
+1. Check that the bot has the necessary permissions in the server (Manage Roles, Manage Channels, Manage Messages, Send Messages, Read Message History, Use Slash Commands)
 2. Make sure bot role is higher than the roles it is assigning
 3. Check that the environment variables have been set up correctly in the .env file
 4. Check the logs for any error messages
 
 ## Change Log
+
+### v1.1.1
+
+- Added `/get-serverconfig` command to get the server current configured settings
+- Renamed `serverconfig` to `/set-serverconfig` command and it will now return config settings(like token address, required balance, channel name, gated role) for confirmation after setting up the server config
+- `/verify` command will now also show token explorer link button for the token address set in the server config
+- Refactored verify flow, balance checks, and role assignment
+- Migrated Client and server to use ethers v6
+- Added Developer Guide, Troubelshooting Guide for setting up the bot
 
 ### v1.0.0
 
@@ -70,6 +115,8 @@ If you encounter any issues with the bot, please do the following:
 
 - [Discord](https://discord.com/) - A free communications app that lets you share voice, video, and text chat with friends, game communities, and developers.
 - [Discord.js](https://discord.js.org/) - A powerful Node.js module that allows you to interact with the Discord API very easily.
+- [Prisma](https://www.prisma.io/) - Next-generation ORM for Node.js & TypeScript | PostgreSQL, MySQL, MariaDB, SQL Server, SQLite, MongoDB and CockroachDB
+- [Postgres](https://www.postgresql.org/) - A powerful, open source object-relational database system.
 - [Ethers.js](https://docs.ethers.io/v5/) - A library that allows you to interact with the Ethereum blockchain.
 - [Express.js](https://expressjs.com/) - A minimal and flexible Node.js web application framework that provides a robust set of features for web and mobile applications.
 - [Xenea](https://xenea.io/) - An EVM-compatible Layer 1 blockchain with integrated autonomous decentralized on-chain storage.
