@@ -16,7 +16,7 @@ The Xenea Gated Discord Bot facilitates secure and gated exclusive access to ser
 
 1. Install the Xenea bot on your Discord server. You can use the following link to add the bot to your server. [Add Bot to Server](https://discord.com/oauth2/authorize?client_id=1248189350177669150)
 
-![Screen1s-Installation](https://github.com/user-attachments/assets/efe60be9-4c94-4d2a-aec4-cb318bb1eb10)
+![Screen1s-Installation](https://github.com/user-attachments/assets/10b48b79-cc6f-48c0-9955-d19833566a54)
 
 > If the bot doesn't have all the permissions listed above in image, it will not work as expected. Make sure to give all the permissions to the bot.
 
@@ -110,6 +110,8 @@ If you encounter any issues with the bot, please do the following:
 
 - [Discord](https://discord.com/) - A free communications app that lets you share voice, video, and text chat with friends, game communities, and developers.
 - [Discord.js](https://discord.js.org/) - A powerful Node.js module that allows you to interact with the Discord API very easily.
+- [Prisma](https://www.prisma.io/) - Next-generation ORM for Node.js & TypeScript | PostgreSQL, MySQL, MariaDB, SQL Server, SQLite, MongoDB and CockroachDB
+- [Postgres](https://www.postgresql.org/) - A powerful, open source object-relational database system.
 - [Ethers.js](https://docs.ethers.io/v5/) - A library that allows you to interact with the Ethereum blockchain.
 - [Express.js](https://expressjs.com/) - A minimal and flexible Node.js web application framework that provides a robust set of features for web and mobile applications.
 - [Xenea](https://xenea.io/) - An EVM-compatible Layer 1 blockchain with integrated autonomous decentralized on-chain storage.
