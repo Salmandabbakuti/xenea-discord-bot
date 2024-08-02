@@ -15,7 +15,11 @@ const commands = [
       "Verify your wallet to access gated channels",
   },
   {
-    name: "serverconfig",
+    name: "get-serverconfig",
+    description: "Get server settings for verification/gating",
+  },
+  {
+    name: "set-serverconfig",
     description: "Configure server settings for verification/gating by admin",
     options: [
       {

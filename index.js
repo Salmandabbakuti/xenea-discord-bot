@@ -98,7 +98,7 @@ client.on(Events.MessageCreate, async (msg) => {
     where: { guildId: msg.guildId },
   });
 
-  if (!serverConfig) return msg.reply("Server not configured. If you are an admin, please configure the server with `/serverconfig` command");
+  if (!serverConfig) return msg.reply("Server not configured. If you are an admin, please configure the server with `/set-serverconfig` command");
 
   if (msg.channelId !== serverConfig.startChannelId) return;
 
@@ -117,7 +117,8 @@ client.on(Events.MessageCreate, async (msg) => {
     const possibleCommands = [
       "/ping",
       "/verify",
-      "/serverconfig",
+      "/set-serverconfig",
+      "/get-serverconfig",
       ...Object.keys(commands)
     ].join(", ");
     msg.reply(
@@ -134,7 +135,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       content: "pong!",
       ephemeral: true
     });
-  } else if (interaction.commandName === "serverconfig") {
+  } else if (interaction.commandName === "set-serverconfig") {
     // get tokenAddress, minimumBalance, startChannelId, roleId from interaction options
     const tokenAddress = interaction.options.getString("tokenaddress");
     //check if address is valid
@@ -193,13 +194,37 @@ client.on(Events.InteractionCreate, async (interaction) => {
       ephemeral: true
     });
 
+  } else if (interaction.commandName === "get-serverconfig") {
+    // get server config command logic
+    const serverConfig = await prisma.serverConfig.findUnique({
+      where: { guildId: interaction.guildId },
+    });
+
+    if (!serverConfig) {
+      return interaction.reply({
+        content: "Server not configured. Ask server admin to configure the server with `/set-serverconfig` command",
+        ephemeral: true
+      });
+    }
+
+    const settings = [
+      `Token Address: ${serverConfig.tokenAddress}`,
+      `Minimum Balance: ${serverConfig.minimumBalance}`,
+      `Start Channel: <#${serverConfig.startChannelId}>`,
+      `Role: <@&${serverConfig.roleId}>`
+    ];
+    const message = "Here are the server configuration settings:\n\n" + settings.join("\n");
+    interaction.reply({
+      content: message,
+      ephemeral: true
+    });
   } else if (interaction.commandName === "verify") {
     // Verify command logic: TBD
     const serverConfig = await prisma.serverConfig.findUnique({
       where: { guildId: interaction.guildId },
     });
 
-    if (!serverConfig) return interaction.reply({ content: "Server not configured. Ask server admin to configure the server with `/serverconfig` command", ephemeral: true });
+    if (!serverConfig) return interaction.reply({ content: "Server not configured. Ask server admin to configure the server with `/set-serverconfig` command", ephemeral: true });
 
     const jwtToken = jwt.sign(
       { configId: serverConfig.id, guildId: interaction.guildId, memberId: interaction.member.id },

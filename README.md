@@ -24,7 +24,7 @@ The Xenea Gated Discord Bot facilitates secure and gated exclusive access to ser
 
 ![Screen6-role-hierarchy](https://github.com/user-attachments/assets/c23d2fd0-01dc-42a5-970f-83a6b01bb382)
 
-3. Set up the server config(i.e token address, required balance, role to assign) using the command `/serverconfig` in the `#⁠start-here` channel on the server.
+3. Set up the server config(i.e token address, required balance, role to assign) using the command `/set-serverconfig` in the `#⁠start-here` channel on the server.
 
 #### For Server Members
 
@@ -89,10 +89,11 @@ If you encounter any issues with the bot, please do the following:
 
 ## Change Log
 
-### v1.1.0
+### v1.1.1
 
-- `serverconfig` command will now return config settings like token address, required balance, channel name, gated role for confirmation after setting up the server config
-- `verify` command will now also show token explorer link button for the token address set in the server config
+- Added `/get-serverconfig` command to get the server current configured settings
+- Renamed `serverconfig` to `/set-serverconfig` command and it will now return config settings(like token address, required balance, channel name, gated role) for confirmation after setting up the server config
+- `/verify` command will now also show token explorer link button for the token address set in the server config
 - Refactored verify flow, balance checks, and role assignment
 - Migrated Client and server to use ethers v6
 - Added Developer Guide, Troubelshooting Guide for setting up the bot
