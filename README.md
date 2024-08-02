@@ -89,8 +89,12 @@ If you encounter any issues with the bot, please do the following:
 
 ## Change Log
 
-### v1.0.1
+### v1.1.0
 
+- `serverconfig` command will now return config settings like token address, required balance, channel name, gated role for confirmation after setting up the server config
+- `verify` command will now also show token explorer link button for the token address set in the server config
+- Refactored verify flow, balance checks, and role assignment
+- Migrated Client and server to use ethers v6
 - Added Developer Guide, Troubelshooting Guide for setting up the bot
 
 ### v1.0.0
