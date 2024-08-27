@@ -16,7 +16,7 @@ The Xenea Gated Discord Bot facilitates secure and gated exclusive access to ser
 
 1. Install the Xenea bot on your Discord server. You can use the following link to add the bot to your server. [Add Bot to Server](https://discord.com/oauth2/authorize?client_id=1248189350177669150)
 
-![Screen1s-Installation](https://github.com/user-attachments/assets/10b48b79-cc6f-48c0-9955-d19833566a54)
+![Screen1s-installation](https://github.com/user-attachments/assets/4a8d99c4-bac4-47d8-a196-a55e99b6fb1c)
 
 > If the bot doesn't have all the permissions listed above in image, it will not work as expected. Make sure to give all the permissions to the bot.
 
@@ -88,6 +88,11 @@ If you encounter any issues with the bot, please do the following:
 4. Check the logs for any error messages
 
 ## Change Log
+
+### v1.1.2
+
+- Removed unnecessary permissions for the bot while installing, now only required permissions are asked for security reasons.
+- Redesigned the verify page for better user experience.
 
 ### v1.1.1
 

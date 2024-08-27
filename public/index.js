@@ -3,10 +3,10 @@ import { ethers } from "https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethe
 const token = new URL(window.location.href).searchParams.get("token");
 const logDiv = document.getElementById("log");
 console.log("token:", token);
-const authorizeButton = document.getElementById("authorize-btn");
-authorizeButton.addEventListener("click", authorize);
+const verifyButton = document.getElementById("verify-btn");
+verifyButton.addEventListener("click", verify);
 
-async function authorize() {
+async function verify() {
   if (!token) {
     console.log(
       "Oh great, another user trying to authorize without a token. Let's just print some error messages and see if they notice... 🙄"
