@@ -293,9 +293,9 @@ app.post("/verify", async (req, res) => {
     });
 
     if (!serverConfig) {
-      return res.status(500).json({
-        code: "Internal Server Error",
-        message: "Server not configured."
+      return res.status(503).json({
+        code: "Service Unavailable",
+        message: "Discord server not yet configured for verification"
       });
     }
     const { tokenAddress, minimumBalance, startChannelId, roleId } = serverConfig;
@@ -345,13 +345,12 @@ app.post("/verify", async (req, res) => {
     return res.status(200).json({ code: "ok", message: "Success" });
   } catch (err) {
     console.log("failed to verify user:", err);
+    if (err instanceof jwt.JsonWebTokenError) return res.status(401).json({ code: "Unauthorized", message: err.message });
     return res
       .status(500)
       .json({ code: "Internal Server Error", message: err.message });
   }
 });
-
-app.get("/", (req, res) => res.redirect("verify"));
 
 app.get("/verify", (req, res) =>
   res.sendFile(__dirname + "/public/index.html")

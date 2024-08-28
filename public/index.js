@@ -9,7 +9,7 @@ verifyButton.addEventListener("click", () => verify(), false);
 async function verify() {
   if (!token) {
     console.log(
-      "Oh great, another user trying to authorize without a token. Let's just print some error messages and see if they notice... 🙄"
+      "Oh great, another user trying to verify without a token. Let's just print some error messages and see if they notice🙄"
     );
     logDiv.innerHTML = "No JWT token provided. Please use the link provided by XeneaGuard Bot";
     return;
@@ -63,7 +63,7 @@ async function verify() {
       logDiv.innerHTML = `Verification failed! ${result.message}`;
     }
   } catch (err) {
-    console.error("Error while authorizing:", err);
+    console.error("Failed to verify wallet:", err);
     logDiv.innerHTML = `Something went wrong! ${err.message}`;
   }
 }
