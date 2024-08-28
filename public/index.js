@@ -4,7 +4,7 @@ const token = new URL(window.location.href).searchParams.get("token");
 const logDiv = document.getElementById("log");
 console.log("token:", token);
 const verifyButton = document.getElementById("verify-btn");
-verifyButton.addEventListener("click", verify);
+verifyButton.addEventListener("click", () => verify(), false);
 
 async function verify() {
   if (!token) {
@@ -63,7 +63,7 @@ async function verify() {
       logDiv.innerHTML = `Verification failed! ${result.message}`;
     }
   } catch (err) {
-    console.log("Error while authorizing:", err);
+    console.error("Error while authorizing:", err);
     logDiv.innerHTML = `Something went wrong! ${err.message}`;
   }
 }
