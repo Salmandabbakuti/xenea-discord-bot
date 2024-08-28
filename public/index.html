@@ -56,10 +56,10 @@
     }
 
     .button-group button:hover {
-      background-color: #f3efef;
+      background-color: #e3e6ea;
     }
 
-    .verify-btn {
+    #verify-btn {
       background-color: #0070f3;
       width: 150px;
       color: #fff;
@@ -69,19 +69,20 @@
       border-radius: 50px;
       font-size: 16px;
       cursor: pointer;
+      transition: background-color 0.3s;
     }
 
-    .verify-btn:hover {
+    #verify-btn:hover {
       background-color: #0056b3;
     }
 
     .container {
       padding: 20px;
-      margin: 20px auto;
+      margin: 80px auto;
       max-width: 900px;
       background-color: white;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      border-radius: 15px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
 
     #log {
@@ -113,7 +114,7 @@
       }
 
       .button-group button {
-        width: 80%;
+        width: 60%;
       }
     }
   </style>
@@ -126,22 +127,23 @@
       ERC20 tokens on Xenea Chain. Install and configure it on any Discord server with your own tokens and roles.</p>
     <div class="button-group">
       <a href="https://discord.com/oauth2/authorize?client_id=1248189350177669150" target="_blank">
-        <button>Install Xenea Bot</button>
+        <button>⬇️ Install on Discord</button>
       </a>
       <a href="https://github.com/Salmandabbakuti/xenea-discord-bot?tab=readme-ov-file#xenea-gated-discord-bot"
         target="_blank">
-        <button>View Documentation</button>
+        <button>📃 View Documentation</button>
       </a>
     </div>
   </section>
 
-  <div class="container">
-    <button id="verify-btn" class="verify-btn">Verify Wallet</button>
+  <section class="container">
+    <button id="verify-btn">🛡️ Verify Wallet</button>
     <p id="address"></p>
     <div id="log">
-      Hey there! Are you ready to authorize? Let's do this, ser!👋
+      Hey there! Are you ready to get verified? This doesn't trigger any transaction or fees.
+      Let's do this, ser!👋
     </div>
-  </div>
+  </section>
 
   <footer>
     <h5>&copy; 2024 Xenea Discord Bot</h5>
