@@ -1,6 +1,6 @@
 {
   "name": "xenea-discord-bot-server",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "Xenea Discord bot server",
   "private": true,
   "scripts": {
