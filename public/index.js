@@ -64,6 +64,7 @@ async function verify() {
     }
   } catch (err) {
     console.error("Failed to verify wallet:", err);
-    logDiv.innerHTML = `Something went wrong! ${err.message}`;
+    const truncatedErrorMessage = err.message.length > 95 ? err.message.substring(0, 95) + "..." : err.message;
+    logDiv.innerHTML = `Something went wrong! ${truncatedErrorMessage}`;
   }
 }

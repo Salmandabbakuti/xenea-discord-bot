@@ -92,7 +92,9 @@ If you encounter any issues with the bot, please do the following:
 ### v1.1.2
 
 - Removed unnecessary permissions for the bot while installing, now only required permissions are asked for security reasons.
-- Redesigned the verify page for better user experience.
+- Removed unnecessary basic slash commands and added only required commands for the bot.
+- Redesigned the verify page for better user experience and added more information about the verification process.
+- Better error handling and messages for the user during the verification process.
 
 ### v1.1.1
 
