@@ -8,7 +8,7 @@ verifyButton.addEventListener("click", () => verify(), false);
 
 async function verify() {
   if (!token) {
-    console.log(
+    console.warn(
       "Oh great, another user trying to verify without a token. Let's just print some error messages and see if they notice🙄"
     );
     logDiv.innerHTML = "No JWT token provided. Please use the link provided by XeneaGuard Bot";

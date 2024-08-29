@@ -1,5 +1,38 @@
 const { REST, Routes } = require("discord.js");
-const { DISCORD_BOT_TOKEN, DISCORD_BOT_APPLICATION_ID } = require("./config.js");
+const { createLogger, format, transports } = require('winston');
+const { DISCORD_BOT_TOKEN, DISCORD_BOT_APPLICATION_ID, LOG_LEVEL } = require("./config.js");
+
+const { combine, timestamp, printf, colorize, errors } = format;
+
+// Log format
+const logFormat = printf(({ level, message, timestamp }) => {
+  console;
+  return `${timestamp} [${level}]: ${message}`;
+});
+
+console.log("level", LOG_LEVEL);
+
+// Logger configuration
+const logger = createLogger({
+  level: LOG_LEVEL || 'info', // Default to 'info'
+  format: combine(
+    timestamp({
+      format: 'MMM D YYYY HH:mm:ss'
+    }),
+    errors({ stack: true }),
+    logFormat
+  ),
+  transports: [
+    new transports.Console({
+      format: combine(
+        colorize(),
+        logFormat
+      )
+    }),
+    // You can add more transports like file transport if needed
+    // new transports.File({ filename: 'combined.log' })
+  ]
+});
 
 const commands = [
   {
@@ -53,7 +86,7 @@ const commands = [
 const rest = new REST().setToken(DISCORD_BOT_TOKEN);
 
 const deployCommands = async (guildId) => {
-  console.log(
+  logger.info(
     `Started deploying ${commands.length} application (/) commands on guild ${guildId}.`
   );
   try {
@@ -63,15 +96,16 @@ const deployCommands = async (guildId) => {
       { body: commands }
     );
 
-    console.log(
+    logger.info(
       `Successfully deployed ${data.length} application (/) commands.`
     );
   } catch (error) {
     // And of course, make sure you catch and log any errors!
-    console.error("Error while deploying application (/) commands:", guildId, error);
+    logger.error("Error while deploying application (/) commands:", guildId, error);
   }
 };
 
 module.exports = {
-  deployCommands
+  deployCommands,
+  logger
 };

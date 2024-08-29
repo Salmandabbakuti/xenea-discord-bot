@@ -11,7 +11,7 @@ const {
 const { Contract, formatUnits, isAddress, JsonRpcProvider, verifyMessage } = require("ethers");
 const jwt = require("jsonwebtoken");
 const prisma = require("./prisma");
-const { deployCommands } = require("./utils");
+const { deployCommands, logger } = require("./utils");
 
 const {
   DISCORD_BOT_TOKEN,
@@ -46,36 +46,36 @@ const client = new Client({
 client.login(DISCORD_BOT_TOKEN);
 
 client.once(Events.ClientReady, () =>
-  console.log(`Logged in as ${client.user.tag}`)
+  logger.info(`Logged in as ${client.user.tag}`)
 );
 
 client.on(Events.GuildCreate, async (guild) => {
-  console.log("Bot added to guild:", guild.name);
+  logger.info("Bot added to guild:", guild.name);
   //deploy slash commands on the joined guild
   await deployCommands(guild.id).catch((err) => {
-    console.log(`Failed to deploy commands on guild ${guild.name}`, err);
+    logger.error(`Failed to deploy commands on guild ${guild.name}`, err);
   });
 });
 
 client.on(Events.GuildDelete, async (guild) => {
-  console.log("Bot removed from guild:", guild.name);
+  logger.info("Bot removed from guild:", guild.name);
   //delete the guild from the db
   await prisma.serverConfig.delete({
     where: { guildId: guild.id }
   }).catch((err) => {
-    console.log("Failed to delete server config", err);
+    logger.error("Failed to delete server config", err);
   });
 });
 
 client.on(Events.GuildMemberAdd, async (member) => {
-  console.log(`${member.user.tag} joined the server: ${member.guild.name}`);
+  logger.info(`${member.user.tag} joined the server: ${member.guild.name}`);
   //get starthere channel from server config table
   const serverConfig = await prisma.serverConfig.findUnique({
     where: { guildId: member.guild.id },
   });
 
   if (!serverConfig) {
-    console.log(`Server not configured for ${member.guild.name}. Skipping welcome message for new joiner.`);
+    logger.warn(`Server not configured for ${member.guild.name}. Skipping welcome message for new joiner.`);
     return;
   }
   const startHereChannel = member.guild.channels.cache.get(serverConfig.startChannelId);
@@ -87,12 +87,12 @@ client.on(Events.GuildMemberAdd, async (member) => {
 });
 
 client.on(Events.GuildMemberRemove, (member) => {
-  console.log(`${member.user.tag} left the server: ${member.guild.name}`);
+  logger.info(`${member.user.tag} left the server: ${member.guild.name}`);
 });
 
 client.on(Events.MessageCreate, async (msg) => {
   if (msg.author.bot || msg.system || msg.channel.type === "DM") return;
-  console.log(`Message received in ${msg.guild.name} from ${msg.author.tag}: ${msg.content}`);
+  logger.info(`Message received in ${msg.guild.name} from ${msg.author.tag}: ${msg.content}`);
 
   const serverConfig = await prisma.serverConfig.findUnique({
     where: { guildId: msg.guildId },
@@ -113,7 +113,7 @@ client.on(Events.MessageCreate, async (msg) => {
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
-  console.log(`Interaction /${interaction.commandName} received in ${interaction.guild.name} from ${interaction.user.tag}`);
+  logger.info(`Interaction /${interaction.commandName} received in ${interaction.guild.name} from ${interaction.user.tag}`);
   if (!interaction.isChatInputCommand()) return;
   if (interaction.commandName === "ping") {
     interaction.reply({
@@ -133,7 +133,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const minimumBalance = interaction.options.getInteger("minimumbalance");
     const startChannelId = interaction.options.getChannel("startchannel").id;
     const roleId = interaction.options.getRole("role").id;
-    console.log({ tokenAddress, minimumBalance, startChannelId, roleId });
+    logger.debug({ tokenAddress, minimumBalance, startChannelId, roleId });
 
     // only allow server owner to configure the server
     if (interaction.member.user.id !== interaction.guild.ownerId) {
@@ -161,7 +161,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         roleId
       }
     }).catch((err) => {
-      console.log("Failed to save server config", err);
+      logger.error("Failed to save server config", err);
     });
 
     // show success message with configured settings
@@ -264,8 +264,8 @@ app.post("/verify", async (req, res) => {
   const { token, address, message, signature } = req.body;
   try {
     const { guildId, memberId } = jwt.verify(token, JWT_SECRET);
-    console.log("decoded from token", { guildId, memberId });
-    console.log("verifying signature and checking balance");
+    logger.debug("decoded from token", { guildId, memberId });
+    logger.info("verifying signature and checking balance");
     const recoveredAddress = verifyMessage(message, signature);
     if (recoveredAddress.toLowerCase() !== address.toLowerCase())
       return res
@@ -291,25 +291,25 @@ app.post("/verify", async (req, res) => {
     // try checking erc20/721 by calling decimals
     try {
       // erc20
-      console.log("trying to get erc20 balance");
+      logger.info("trying to get erc20 balance");
       const decimals = await tokenContract.decimals();
-      console.log("erc20 token decimals", decimals);
+      logger.debug("erc20 token decimals", decimals);
       const balanceWei = await tokenContract.balanceOf(address);
       const balance = parseFloat(formatUnits(balanceWei, decimals));
-      console.log(`ERC20 token balance: ${balance}, required: ${minimumBalance}`);
+      logger.debug(`ERC20 token balance: ${balance}, required: ${minimumBalance}`);
       hasRequiredBalance = balance >= parseFloat(minimumBalance);
     } catch (err) {
       // erc721
-      console.log("failed to get erc20 balance.", err);
-      console.log("trying to get erc721 balance");
+      logger.warn("failed to get erc20 balance.", err);
+      logger.info("trying to get erc721 balance");
       const balance = await tokenContract.balanceOf(address).catch((err) => {
-        console.log("failed to get erc721 balance. returning", err);
+        logger.error("failed to get erc721 balance. returning", err);
         return 0n;
       });
-      console.log(`ERC721 token balance: ${balance}, required: ${minimumBalance}`);
+      logger.debug(`ERC721 token balance: ${balance}, required: ${minimumBalance}`);
       hasRequiredBalance = balance >= BigInt(minimumBalance);
     }
-    console.log("User has required balance?:", hasRequiredBalance);
+    logger.debug("User has required balance?:", hasRequiredBalance);
 
     const guild = client.guilds.cache.get(guildId);
     const member = await guild.members.fetch(memberId);
@@ -319,19 +319,19 @@ app.post("/verify", async (req, res) => {
     if (hasRequiredBalance) {
       const gatedRole = guild.roles.cache.find((role) => role.id === roleId);
       await member.roles.add(gatedRole);
-      console.log("User verified and given gated role");
+      logger.info(`${member.user.tag} verified and given ${gatedRole.name} role on server: ${guild.name}`);
       startHereChannel.send(
         `Hey <@${memberId}>, your wallet address ${truncatedAddress} has been verified and you have been given ${gatedRole.name} role. You can now access the gated channels.`
       );
     } else {
-      console.log("User verified but does not have required balance set in server config");
+      logger.info(`${member.user.tag} verified but does not satisfy rules set on server: ${guild.name}`);
       startHereChannel.send(
         `Hey <@${memberId}>, your wallet address ${truncatedAddress} has been verified. but, you do not have the required balance of tokens in your wallet. Please make sure you have at least ${minimumBalance} tokens of the token at address \`${tokenAddress}\` in your wallet.`
       );
     }
     return res.status(200).json({ code: "ok", message: "Success" });
   } catch (err) {
-    console.log("failed to verify user:", err);
+    logger.error("failed to verify user:", err);
     if (err instanceof jwt.JsonWebTokenError) return res.status(401).json({ code: "Unauthorized", message: err.message });
     return res
       .status(500)
@@ -345,5 +345,5 @@ app.get("/verify", (req, res) =>
 
 const port = process.env.PORT || 3000;
 app.listen(port, () =>
-  console.log(`🔥 Server listening at http://localhost:${port} 🚀`)
+  logger.info(`🔥 Server listening at http://localhost:${port} 🚀`)
 );
