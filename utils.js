@@ -2,24 +2,24 @@ const { REST, Routes } = require("discord.js");
 const { createLogger, format, transports } = require('winston');
 const { DISCORD_BOT_TOKEN, DISCORD_BOT_APPLICATION_ID, LOG_LEVEL } = require("./config.js");
 
-const { combine, timestamp, printf, colorize, errors } = format;
+const { combine, timestamp, printf, colorize, errors, simple } = format;
 
 // Log format
-const logFormat = printf(({ level, message, timestamp }) => {
-  console;
-  return `${timestamp} [${level}]: ${message}`;
+const logFormat = printf(({ level, message, timestamp, ...meta }) => {
+  const extraArgs = meta[Symbol.for('splat')];
+  const stringArgs = extraArgs?.length ? extraArgs.join(" ") : "";
+  return `${timestamp} [${level}]: ${message} ${stringArgs}`;
 });
-
-console.log("level", LOG_LEVEL);
 
 // Logger configuration
 const logger = createLogger({
-  level: LOG_LEVEL || 'info', // Default to 'info'
+  level: LOG_LEVEL || 'info',
   format: combine(
-    timestamp({
-      format: 'MMM D YYYY HH:mm:ss'
-    }),
     errors({ stack: true }),
+    timestamp({
+      format: 'MMM D YYYY hh:mm:ss A'
+    }),
+    simple(),
     logFormat
   ),
   transports: [
@@ -28,9 +28,7 @@ const logger = createLogger({
         colorize(),
         logFormat
       )
-    }),
-    // You can add more transports like file transport if needed
-    // new transports.File({ filename: 'combined.log' })
+    })
   ]
 });
 
