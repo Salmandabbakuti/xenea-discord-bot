@@ -50,15 +50,15 @@ client.once(Events.ClientReady, () =>
 );
 
 client.on(Events.GuildCreate, async (guild) => {
-  console.log("Bot added to guild", guild.name);
+  console.log("Bot added to guild:", guild.name);
   //deploy slash commands on the joined guild
   await deployCommands(guild.id).catch((err) => {
-    console.log("Failed to deploy commands", err);
+    console.log(`Failed to deploy commands on guild ${guild.name}`, err);
   });
 });
 
 client.on(Events.GuildDelete, async (guild) => {
-  console.log("Bot removed from guild", guild.name);
+  console.log("Bot removed from guild:", guild.name);
   //delete the guild from the db
   await prisma.serverConfig.delete({
     where: { guildId: guild.id }
@@ -68,14 +68,14 @@ client.on(Events.GuildDelete, async (guild) => {
 });
 
 client.on(Events.GuildMemberAdd, async (member) => {
-  console.log("a new member hopped into server", member.user.tag);
+  console.log(`${member.user.tag} joined the server: ${member.guild.name}`);
   //get starthere channel from server config table
   const serverConfig = await prisma.serverConfig.findUnique({
     where: { guildId: member.guild.id },
   });
 
   if (!serverConfig) {
-    console.log("Server not configured.");
+    console.log(`Server not configured for ${member.guild.name}. Skipping welcome message for new joiner.`);
     return;
   }
   const startHereChannel = member.guild.channels.cache.get(serverConfig.startChannelId);
@@ -87,12 +87,12 @@ client.on(Events.GuildMemberAdd, async (member) => {
 });
 
 client.on(Events.GuildMemberRemove, (member) => {
-  console.log("a member left the server", member.user.tag, member.id);
+  console.log(`${member.user.tag} left the server: ${member.guild.name}`);
 });
 
 client.on(Events.MessageCreate, async (msg) => {
-  console.log("Message received", msg.content);
   if (msg.author.bot || msg.system || msg.channel.type === "DM") return;
+  console.log(`Message received in ${msg.guild.name} from ${msg.author.tag}: ${msg.content}`);
 
   const serverConfig = await prisma.serverConfig.findUnique({
     where: { guildId: msg.guildId },
@@ -113,7 +113,7 @@ client.on(Events.MessageCreate, async (msg) => {
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
-  console.log("Interaction received", interaction.commandName);
+  console.log(`Interaction /${interaction.commandName} received in ${interaction.guild.name} from ${interaction.user.tag}`);
   if (!interaction.isChatInputCommand()) return;
   if (interaction.commandName === "ping") {
     interaction.reply({
@@ -319,10 +319,12 @@ app.post("/verify", async (req, res) => {
     if (hasRequiredBalance) {
       const gatedRole = guild.roles.cache.find((role) => role.id === roleId);
       await member.roles.add(gatedRole);
+      console.log("User verified and given gated role");
       startHereChannel.send(
         `Hey <@${memberId}>, your wallet address ${truncatedAddress} has been verified and you have been given ${gatedRole.name} role. You can now access the gated channels.`
       );
     } else {
+      console.log("User verified but does not have required balance set in server config");
       startHereChannel.send(
         `Hey <@${memberId}>, your wallet address ${truncatedAddress} has been verified. but, you do not have the required balance of tokens in your wallet. Please make sure you have at least ${minimumBalance} tokens of the token at address \`${tokenAddress}\` in your wallet.`
       );
