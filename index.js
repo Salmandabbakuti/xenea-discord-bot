@@ -101,30 +101,15 @@ client.on(Events.MessageCreate, async (msg) => {
   if (!serverConfig) return msg.reply("Server not configured. If you are an admin, please configure the server with `/set-serverconfig` command");
 
   if (msg.channelId !== serverConfig.startChannelId) return;
-
-  // Basic command handler
-  const commands = {
-    ping: "pong",
-    pong: "ping",
-    "ping pong": "pong ping",
-    date: new Date().toUTCString()
-  };
-
-  const commandResponse = commands[msg.content.toLowerCase()];
-  if (commandResponse) {
-    msg.reply(commandResponse);
-  } else {
-    const possibleCommands = [
-      "/ping",
-      "/verify",
-      "/set-serverconfig",
-      "/get-serverconfig",
-      ...Object.keys(commands)
-    ].join(", ");
-    msg.reply(
-      `I don't know what you mean. I can only respond to the following commands: ${possibleCommands}`
-    );
-  }
+  const possibleCommands = [
+    "/ping",
+    "/verify",
+    "/set-serverconfig",
+    "/get-serverconfig"
+  ].join(", ");
+  msg.reply(
+    `I don't know what you mean. I can only respond to the following commands: ${possibleCommands}`
+  );
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
