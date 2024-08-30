@@ -24,6 +24,7 @@ const logger = createLogger({
   ),
   transports: [
     new transports.Console({
+      level: LOG_LEVEL || 'info',
       format: combine(
         colorize(),
         logFormat
