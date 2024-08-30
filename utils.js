@@ -2,13 +2,13 @@ const { REST, Routes } = require("discord.js");
 const { createLogger, format, transports } = require('winston');
 const { DISCORD_BOT_TOKEN, DISCORD_BOT_APPLICATION_ID, LOG_LEVEL } = require("./config.js");
 
-const { combine, timestamp, printf, colorize, errors, simple } = format;
+const { combine, timestamp, printf, colorize, errors } = format;
 
 // Log format
 const logFormat = printf(({ level, message, timestamp, ...meta }) => {
-  const extraArgs = meta[Symbol.for('splat')];
-  const stringArgs = extraArgs?.length ? extraArgs.join(" ") : "";
-  return `${timestamp} [${level}]: ${message} ${stringArgs}`;
+  const extraArgsArr = meta[Symbol.for('splat')];
+  const extraArgs = extraArgsArr?.length ? extraArgsArr.join(" ") : "";
+  return `${timestamp} [${level}]: ${message} ${extraArgs}`;
 });
 
 // Logger configuration
@@ -16,21 +16,13 @@ const logger = createLogger({
   level: LOG_LEVEL || 'info',
   format: combine(
     errors({ stack: true }),
+    colorize(),
     timestamp({
       format: 'MMM D YYYY hh:mm:ss A'
     }),
-    simple(),
     logFormat
   ),
-  transports: [
-    new transports.Console({
-      level: LOG_LEVEL || 'info',
-      format: combine(
-        colorize(),
-        logFormat
-      )
-    })
-  ]
+  transports: [new transports.Console()]
 });
 
 const commands = [

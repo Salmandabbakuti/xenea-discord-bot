@@ -32,7 +32,6 @@ const tokenABI = [
   "function decimals() view returns (uint8)"
 ];
 
-
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
