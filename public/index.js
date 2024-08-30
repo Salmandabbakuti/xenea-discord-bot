@@ -3,13 +3,13 @@ import { ethers } from "https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethe
 const token = new URL(window.location.href).searchParams.get("token");
 const logDiv = document.getElementById("log");
 console.log("token:", token);
-const authorizeButton = document.getElementById("authorize-btn");
-authorizeButton.addEventListener("click", authorize);
+const verifyButton = document.getElementById("verify-btn");
+verifyButton.addEventListener("click", () => verify(), false);
 
-async function authorize() {
+async function verify() {
   if (!token) {
-    console.log(
-      "Oh great, another user trying to authorize without a token. Let's just print some error messages and see if they notice... 🙄"
+    console.warn(
+      "Oh great, another user trying to verify without a token. Let's just print some error messages and see if they notice🙄"
     );
     logDiv.innerHTML = "No JWT token provided. Please use the link provided by XeneaGuard Bot";
     return;
@@ -63,7 +63,8 @@ async function authorize() {
       logDiv.innerHTML = `Verification failed! ${result.message}`;
     }
   } catch (err) {
-    console.log("Error while authorizing:", err);
-    logDiv.innerHTML = `Something went wrong! ${err.message}`;
+    console.error("Failed to verify wallet:", err);
+    const truncatedErrorMessage = err.message.length > 95 ? err.message.substring(0, 95) + "..." : err.message;
+    logDiv.innerHTML = `Something went wrong! ${truncatedErrorMessage}`;
   }
 }

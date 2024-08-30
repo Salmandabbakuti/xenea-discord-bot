@@ -1,6 +1,6 @@
 {
-  "name": "discord-bot-server",
-  "version": "1.1.1",
+  "name": "xenea-discord-bot-server",
+  "version": "1.2.0",
   "description": "Xenea Discord bot server",
   "private": true,
   "scripts": {
@@ -20,6 +20,7 @@
     "dotenv": "^16.4.5",
     "ethers": "^6.13.2",
     "express": "^4.19.2",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "winston": "^3.14.2"
   }
 }
