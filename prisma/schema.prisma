@@ -17,7 +17,7 @@ model ServerConfig {
   id             String   @id @default(uuid())
   guildId        String   @unique
   startChannelId String
-  gateChannelId  String   @default("")
+  webhookUrl     String   @default("")
   roleId         String
   tokenAddress   String
   minimumBalance Float

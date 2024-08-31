@@ -11,7 +11,7 @@ const {
 const { Contract, formatUnits, isAddress, JsonRpcProvider, verifyMessage } = require("ethers");
 const jwt = require("jsonwebtoken");
 const prisma = require("./prisma");
-const { deployCommands, logger } = require("./utils");
+const { deployCommands, logger, postDataToWebhook } = require("./utils");
 
 const {
   DISCORD_BOT_TOKEN,
@@ -51,8 +51,16 @@ client.once(Events.ClientReady, () =>
 client.on(Events.GuildCreate, async (guild) => {
   logger.info("Bot added to guild:", guild.name);
   //deploy slash commands on the joined guild
-  await deployCommands(guild.id).catch((err) => {
+  await deployCommands(guild.id).catch(async (err) => {
+    const serverConfig = await prisma.serverConfig.findUnique({
+      where: { guildId: guild.id },
+    });
     logger.error(`Failed to deploy commands on guild ${guild.name}`, err);
+    if (serverConfig?.webhookUrl) {
+      postDataToWebhook(serverConfig.webhookUrl, {
+        content: `Attention Required: Failed to deploy commands on guild ${guild.name}: ${err.message}`,
+      });
+    }
   });
 });
 
@@ -78,7 +86,15 @@ client.on(Events.GuildMemberAdd, async (member) => {
     return;
   }
   const startHereChannel = member.guild.channels.cache.get(serverConfig.startChannelId);
-  if (!startHereChannel) return;
+  if (!startHereChannel) {
+    logger.warn(`Configured start channel not found for ${member.guild.name}. Skipping welcome message for new joiner.`);
+    if (serverConfig?.webhookUrl) {
+      postDataToWebhook(serverConfig.webhookUrl, {
+        content: `Attention Required: Configured start channel not found for ${member.guild.name} welcome messages!`,
+      });
+    }
+    return;
+  }
 
   startHereChannel.send({
     content: `Welcome, <@${member.id}>. We hope you brought pizza! Please type \`/verify\` command to verify your wallet and get access to our exclusive channels and perks!`
@@ -332,6 +348,11 @@ app.post("/verify", async (req, res) => {
   } catch (err) {
     logger.error("failed to verify user:", err);
     if (err instanceof jwt.JsonWebTokenError) return res.status(401).json({ code: "Unauthorized", message: err.message });
+    if (serverConfig?.webhookUrl) {
+      postDataToWebhook(serverConfig.webhookUrl, {
+        content: `Attention Required: Internal Server Error while verifying user: ${err.message}`,
+      });
+    }
     return res
       .status(500)
       .json({ code: "Internal Server Error", message: err.message });
