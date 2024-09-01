@@ -145,10 +145,19 @@ client.on(Events.InteractionCreate, async (interaction) => {
         ephemeral: true
       });
     }
+    const webhookUrl = interaction.options.getString("webhookurl");
+    //check if webhook url is valid
+    if (webhookUrl && !webhookUrl.startsWith("https://discord.com/api/webhooks/")) {
+      return interaction.reply({
+        content: "Invalid discord webhook URL. It should start with `https://discord.com/api/webhooks/`",
+        ephemeral: true
+      });
+    }
     const minimumBalance = interaction.options.getInteger("minimumbalance");
     const startChannelId = interaction.options.getChannel("startchannel").id;
     const roleId = interaction.options.getRole("role").id;
-    logger.debug({ tokenAddress, minimumBalance, startChannelId, roleId });
+
+    logger.debug({ tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl });
 
     // only allow server owner to configure the server
     if (interaction.member.user.id !== interaction.guild.ownerId) {
@@ -159,21 +168,23 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
 
     // save server config to db
+
     await prisma.serverConfig.upsert({
       where: { guildId: interaction.guildId },
       update: {
         tokenAddress,
         minimumBalance,
         startChannelId,
-        roleId
+        roleId,
+        webhookUrl
       },
       create: {
         guildId: interaction.guildId,
         tokenAddress,
         minimumBalance,
         startChannelId,
-        gateChannelId: "",
-        roleId
+        roleId,
+        webhookUrl
       }
     }).catch((err) => {
       logger.error("Failed to save server config", err);
@@ -185,7 +196,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
       `Token Address: ${tokenAddress}`,
       `Minimum Balance: ${minimumBalance}`,
       `Start Channel: <#${startChannelId}>`,
-      `Role: <@&${roleId}>`
+      `Role: <@&${roleId}>`,
+      `Webhook URL: ${webhookUrl ? webhookUrl : "Not set"}`
     ];
     const outro = "Server members can now use `/verify` command to verify their wallet and get gated role which give access to exclusive channels and perks!";
     const message = infoMessage + "\n\n" + settings.join("\n") + "\n\n" + outro;
@@ -211,9 +223,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
       `Token Address: ${serverConfig.tokenAddress}`,
       `Minimum Balance: ${serverConfig.minimumBalance}`,
       `Start Channel: <#${serverConfig.startChannelId}>`,
-      `Role: <@&${serverConfig.roleId}>`
+      `Role: <@&${serverConfig.roleId}>`,
+      `Webhook URL: ${serverConfig?.webhookUrl ? serverConfig.webhookUrl : "Not set"}`
     ];
-    const message = "Here are the server configuration settings:\n\n" + settings.join("\n");
+    const message = "Here are the server's current configuration settings:\n\n" + settings.join("\n");
     interaction.reply({
       content: message,
       ephemeral: true

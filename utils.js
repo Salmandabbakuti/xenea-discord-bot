@@ -70,6 +70,12 @@ const commands = [
         description: "Role to assign to verified users",
         type: 8,
         required: true
+      },
+      {
+        name: "webhookurl",
+        description: "Discord channel Webhook URL to post critical messages to server admins",
+        type: 3,
+        required: false
       }
     ]
   }
