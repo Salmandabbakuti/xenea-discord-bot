@@ -10,6 +10,7 @@ const {
 } = require("discord.js");
 const { Contract, formatUnits, isAddress, JsonRpcProvider, verifyMessage } = require("ethers");
 const jwt = require("jsonwebtoken");
+const path = require('path');
 const prisma = require("./prisma");
 const { deployCommands, logger, postDataToWebhook } = require("./utils");
 
@@ -22,7 +23,7 @@ const {
 
 const app = express();
 app.use(express.json());
-app.use(express.static("public"));
+app.use(express.static(path.join(__dirname, "../public")));
 
 const provider = new JsonRpcProvider(RPC_URL);
 
@@ -58,7 +59,7 @@ client.on(Events.GuildCreate, async (guild) => {
     logger.error(`Failed to deploy commands on guild ${guild.name}`, err);
     if (serverConfig?.webhookUrl) {
       postDataToWebhook(serverConfig.webhookUrl, {
-        content: `Attention Required: Failed to deploy commands on guild ${guild.name}: ${err.message}`,
+        content: `Attention Required: Failed to deploy commands on guild ${guild.name}: ${err}`,
       });
     }
   });
@@ -157,7 +158,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const startChannelId = interaction.options.getChannel("startchannel").id;
     const roleId = interaction.options.getRole("role").id;
 
-    logger.debug({ tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl });
+    logger.debug("Config settings:", JSON.stringify({ tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl }));
 
     // only allow server owner to configure the server
     if (interaction.member.user.id !== interaction.guild.ownerId) {
@@ -176,7 +177,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         minimumBalance,
         startChannelId,
         roleId,
-        webhookUrl
+        webhookUrl: webhookUrl || ""
       },
       create: {
         guildId: interaction.guildId,
@@ -184,7 +185,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
         minimumBalance,
         startChannelId,
         roleId,
-        webhookUrl
+        webhookUrl: webhookUrl || ""
       }
     }).catch((err) => {
       logger.error("Failed to save server config", err);
@@ -290,8 +291,9 @@ app.post("/verify", async (req, res) => {
       message: "Missing required fields: token/address/message/signature"
     });
   const { token, address, message, signature } = req.body;
+  let guildId, memberId;
   try {
-    const { guildId, memberId } = jwt.verify(token, JWT_SECRET);
+    ({ guildId, memberId } = jwt.verify(token, JWT_SECRET));
     logger.debug("decoded from token", { guildId, memberId });
     logger.info("verifying signature and checking balance");
     const recoveredAddress = verifyMessage(message, signature);
@@ -361,9 +363,14 @@ app.post("/verify", async (req, res) => {
   } catch (err) {
     logger.error("failed to verify user:", err);
     if (err instanceof jwt.JsonWebTokenError) return res.status(401).json({ code: "Unauthorized", message: err.message });
+    const serverConfig = await prisma.serverConfig.findUnique({
+      where: { guildId },
+    }).catch((err) => {
+      logger.error("Failed to get server config", err);
+    });
     if (serverConfig?.webhookUrl) {
       postDataToWebhook(serverConfig.webhookUrl, {
-        content: `Attention Required: Internal Server Error while verifying user: ${err.message}`,
+        content: `Attention Required: Internal Server Error while verifying user: ${err}`,
       });
     }
     return res
@@ -373,7 +380,7 @@ app.post("/verify", async (req, res) => {
 });
 
 app.get("/verify", (req, res) =>
-  res.sendFile(__dirname + "/public/index.html")
+  res.sendFile(path.join(__dirname, '../public/index.html'))
 );
 
 const port = process.env.PORT || 3000;

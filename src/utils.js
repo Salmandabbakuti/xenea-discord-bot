@@ -113,7 +113,7 @@ const postDataToWebhook = (webhookUrl, data) => {
   })
     .then((res) => res.text())
     .then(() => logger.info("Posted data to webhook"))
-    .catch((error) => logger.error("Error while posting data to webhook", error));
+    .catch((err) => logger.error("Error while posting data to webhook", err));
 };
 
 module.exports = {
