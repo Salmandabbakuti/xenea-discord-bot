@@ -161,7 +161,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
     logger.debug("Config settings:", JSON.stringify({ tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl }));
 
     // only allow server owner to configure the server
-    if (interaction.member.user.id !== interaction.guild.ownerId) {
+    const isServerOwner = interaction.member.user.id === interaction.guild.ownerId;
+    if (!isServerOwner) {
       return interaction.reply({
         content: "You are not authorized to configure the server.",
         ephemeral: true
@@ -197,9 +198,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
       `Token Address: ${tokenAddress}`,
       `Minimum Balance: ${minimumBalance}`,
       `Start Channel: <#${startChannelId}>`,
-      `Role: <@&${roleId}>`,
-      `Webhook URL: ${webhookUrl ? webhookUrl : "Not set"}`
+      `Role: <@&${roleId}>`
     ];
+
+    if (isServerOwner && webhookUrl) {
+      settings.push(`Webhook URL: ||${webhookUrl}||`);
+    }
     const outro = "Server members can now use `/verify` command to verify their wallet and get gated role which give access to exclusive channels and perks!";
     const message = infoMessage + "\n\n" + settings.join("\n") + "\n\n" + outro;
     interaction.reply({
@@ -220,13 +224,18 @@ client.on(Events.InteractionCreate, async (interaction) => {
       });
     }
 
+    const { tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl } = serverConfig;
+    const isServerOwner = interaction.member.user.id === interaction.guild.ownerId;
     const settings = [
-      `Token Address: ${serverConfig.tokenAddress}`,
-      `Minimum Balance: ${serverConfig.minimumBalance}`,
-      `Start Channel: <#${serverConfig.startChannelId}>`,
-      `Role: <@&${serverConfig.roleId}>`,
-      `Webhook URL: ${serverConfig?.webhookUrl ? serverConfig.webhookUrl : "Not set"}`
+      `Token Address: ${tokenAddress}`,
+      `Minimum Balance: ${minimumBalance}`,
+      `Start Channel: <#${startChannelId}>`,
+      `Role: <@&${roleId}>`
     ];
+
+    if (isServerOwner && webhookUrl) {
+      settings.push(`Webhook URL: ||${webhookUrl}||`);
+    };
     const message = "Here are the server's current configuration settings:\n\n" + settings.join("\n");
     interaction.reply({
       content: message,
