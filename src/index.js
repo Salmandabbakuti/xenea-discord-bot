@@ -21,6 +21,7 @@ const {
   APP_URL,
   JWT_SECRET
 } = require("./config");
+
 const rateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minutes
   max: 10, // max of 10 requests per minute
@@ -140,166 +141,205 @@ client.on(Events.MessageCreate, async (msg) => {
 
 client.on(Events.InteractionCreate, async (interaction) => {
   logger.info(`Interaction /${interaction.commandName} received in ${interaction.guild.name} from ${interaction.user.tag}`);
+
   if (!interaction.isChatInputCommand()) return;
-  if (interaction.commandName === "ping") {
-    interaction.reply({
-      content: "pong!",
-      ephemeral: true
-    });
-  } else if (interaction.commandName === "set-serverconfig") {
-    // get tokenAddress, minimumBalance, startChannelId, roleId from interaction options
-    const tokenAddress = interaction.options.getString("tokenaddress");
-    //check if address is valid
-    if (!isAddress(tokenAddress)) {
-      return interaction.reply({
-        content: "Invalid token address",
-        ephemeral: true
-      });
-    }
-    const webhookUrl = interaction.options.getString("webhookurl");
-    //check if webhook url is valid
-    if (webhookUrl && !webhookUrl.startsWith("https://discord.com/api/webhooks/")) {
-      return interaction.reply({
-        content: "Invalid discord webhook URL. It should start with `https://discord.com/api/webhooks/`",
-        ephemeral: true
-      });
-    }
-    const minimumBalance = interaction.options.getInteger("minimumbalance");
-    const startChannelId = interaction.options.getChannel("startchannel").id;
-    const roleId = interaction.options.getRole("role").id;
 
-    logger.debug("Config settings:", JSON.stringify({ tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl }));
-
-    // only allow server owner to configure the server
-    const isServerOwner = interaction.member.user.id === interaction.guild.ownerId;
-    if (!isServerOwner) {
-      return interaction.reply({
-        content: "You are not authorized to configure the server.",
-        ephemeral: true
-      });
-    }
-
-    // save server config to db
-
-    await prisma.serverConfig.upsert({
-      where: { guildId: interaction.guildId },
-      update: {
-        tokenAddress,
-        minimumBalance,
-        startChannelId,
-        roleId,
-        webhookUrl: webhookUrl || ""
-      },
-      create: {
-        guildId: interaction.guildId,
-        tokenAddress,
-        minimumBalance,
-        startChannelId,
-        roleId,
-        webhookUrl: webhookUrl || ""
-      }
-    }).catch((err) => {
-      logger.error("Failed to save server config", err);
-    });
-
-    // show success message with configured settings
-    const infoMessage = "Server configured successfully. Here are the settings:";
-    const settings = [
-      `Token Address: ${tokenAddress}`,
-      `Minimum Balance: ${minimumBalance}`,
-      `Start Channel: <#${startChannelId}>`,
-      `Role: <@&${roleId}>`
-    ];
-
-    if (isServerOwner && webhookUrl) {
-      settings.push(`Webhook URL: ||${webhookUrl}||`);
-    }
-    const outro = "Server members can now use `/verify` command to verify their wallet and get gated role which give access to exclusive channels and perks!";
-    const message = infoMessage + "\n\n" + settings.join("\n") + "\n\n" + outro;
-    interaction.reply({
-      content: message,
-      ephemeral: true
-    });
-
-  } else if (interaction.commandName === "get-serverconfig") {
-    // get server config command logic
-    const serverConfig = await prisma.serverConfig.findUnique({
-      where: { guildId: interaction.guildId },
-    });
-
-    if (!serverConfig) {
-      return interaction.reply({
-        content: "Server not configured. Ask server admin to configure the server with `/set-serverconfig` command",
-        ephemeral: true
-      });
-    }
-
-    const { tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl } = serverConfig;
-    const isServerOwner = interaction.member.user.id === interaction.guild.ownerId;
-    const settings = [
-      `Token Address: ${tokenAddress}`,
-      `Minimum Balance: ${minimumBalance}`,
-      `Start Channel: <#${startChannelId}>`,
-      `Role: <@&${roleId}>`
-    ];
-
-    if (isServerOwner && webhookUrl) {
-      settings.push(`Webhook URL: ||${webhookUrl}||`);
-    };
-    const message = "Here are the server's current configuration settings:\n\n" + settings.join("\n");
-    interaction.reply({
-      content: message,
-      ephemeral: true
-    });
-  } else if (interaction.commandName === "verify") {
-    // Verify command logic: TBD
-    const serverConfig = await prisma.serverConfig.findUnique({
-      where: { guildId: interaction.guildId },
-    });
-
-    if (!serverConfig) return interaction.reply({ content: "Server not configured. Ask server admin to configure the server with `/set-serverconfig` command", ephemeral: true });
-
-    const jwtToken = jwt.sign(
-      { configId: serverConfig.id, guildId: interaction.guildId, memberId: interaction.member.id },
-      JWT_SECRET,
-      { expiresIn: "5m" } // 5 minutes
-    );
-    const { tokenAddress, minimumBalance } = serverConfig;
-    const greeting = "Hello there! Welcome to the server!";
-    const steps = [
-      `Please Click on Verify with Wallet to verify your wallet address.`,
-      `Make sure you have at least ${minimumBalance} tokens of the token at address \`${tokenAddress}\` in your wallet.`,
-      "Once verified, you'll be automatically assigned the gated role which will give you access to our exclusive channels and perks!"
-    ];
-    const outro =
-      "If you have any questions or encounter any issues, please don't hesitate to reach out to us. Good luck and have fun!";
-    const message = greeting + "\n\n" + steps.join("\n") + "\n\n" + outro;
-
-    const verifyWithWalletButton = new ButtonBuilder()
-      .setLabel("Verify with Wallet")
-      .setStyle(ButtonStyle.Link)
-      .setURL(`${APP_URL}/verify?token=${jwtToken}`);
-
-    const tokenExplorerButton = new ButtonBuilder()
-      .setLabel("View Token on Explorer")
-      .setStyle(ButtonStyle.Link)
-      .setURL(`https://testnet.crossvaluescan.com/token/${tokenAddress}`);
-    const actionRow = new ActionRowBuilder().addComponents(
-      verifyWithWalletButton,
-      tokenExplorerButton
-    );
-    interaction.reply({
-      content: message,
-      components: [actionRow],
-      ephemeral: true
-    });
-  } else {
-    interaction.reply({
-      content: "Unknown command",
-      ephemeral: true
-    });
+  switch (interaction.commandName) {
+    case "ping":
+      await handlePingCommand(interaction);
+      break;
+    case "set-serverconfig":
+      await handleSetServerConfig(interaction);
+      break;
+    case "get-serverconfig":
+      await handleGetServerConfig(interaction);
+      break;
+    case "verify":
+      await handleVerifyCommand(interaction);
+      break;
+    default:
+      interaction.reply({ content: "Unknown command", ephemeral: true });
+      break;
   }
 });
+
+async function handlePingCommand(interaction) {
+  await interaction.reply({
+    content: "pong!",
+    ephemeral: true
+  });
+}
+
+async function handleSetServerConfig(interaction) {
+  const { tokenAddress, webhookUrl, minimumBalance, startChannelId, roleId } = getConfigOptions(interaction);
+
+  if (!isAddress(tokenAddress)) {
+    return sendEphemeralReply(interaction, "Invalid token address");
+  }
+
+  if (webhookUrl && !webhookUrl.startsWith("https://discord.com/api/webhooks/")) {
+    return sendEphemeralReply(interaction, "Invalid discord webhook URL. It should start with `https://discord.com/api/webhooks/`");
+  }
+
+  if (!isServerOwner(interaction)) {
+    return sendEphemeralReply(interaction, "You are not authorized to configure the server.");
+  }
+
+  try {
+    await saveServerConfig({ guildId: interaction.guildId, tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl });
+    await sendConfigSuccessReply({ interaction, tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl });
+  } catch (err) {
+    logger.error("Failed to save server config", err);
+  }
+}
+
+async function handleGetServerConfig(interaction) {
+  const serverConfig = await prisma.serverConfig.findUnique({
+    where: { guildId: interaction.guildId },
+  });
+
+  if (!serverConfig) {
+    return sendEphemeralReply(interaction, "Server not configured. Ask server admin to configure the server with `/set-serverconfig` command");
+  }
+
+  await sendServerConfigReply(interaction, serverConfig);
+}
+
+async function handleVerifyCommand(interaction) {
+  const serverConfig = await prisma.serverConfig.findUnique({
+    where: { guildId: interaction.guildId },
+  });
+
+  if (!serverConfig) {
+    return sendEphemeralReply(interaction, "Server not configured. Ask server admin to configure the server with `/set-serverconfig` command");
+  }
+
+  const jwtToken = jwt.sign(
+    { configId: serverConfig.id, guildId: interaction.guildId, memberId: interaction.member.id },
+    JWT_SECRET,
+    { expiresIn: "5m" } // 5 minutes
+  );
+  await sendVerifyCommandReply(interaction, serverConfig, jwtToken);
+}
+
+function getConfigOptions(interaction) {
+  return {
+    tokenAddress: interaction.options.getString("tokenaddress"),
+    webhookUrl: interaction.options.getString("webhookurl"),
+    minimumBalance: interaction.options.getInteger("minimumbalance"),
+    startChannelId: interaction.options.getChannel("startchannel").id,
+    roleId: interaction.options.getRole("role").id,
+  };
+}
+
+function isServerOwner(interaction) {
+  return interaction.member.user.id === interaction.guild.ownerId;
+}
+
+function sendEphemeralReply(interaction, message) {
+  return interaction.reply({
+    content: message,
+    ephemeral: true
+  });
+}
+
+async function saveServerConfig({ guildId, tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl }) {
+  await prisma.serverConfig.upsert({
+    where: { guildId },
+    update: {
+      tokenAddress,
+      minimumBalance,
+      startChannelId,
+      roleId,
+      webhookUrl: webhookUrl || ""
+    },
+    create: {
+      guildId,
+      tokenAddress,
+      minimumBalance,
+      startChannelId,
+      roleId,
+      webhookUrl: webhookUrl || ""
+    }
+  });
+}
+
+async function sendConfigSuccessReply({ interaction, tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl }) {
+  const infoMessage = "Server configured successfully. Here are the settings:";
+  const settings = [
+    `Token Address: ${tokenAddress}`,
+    `Minimum Balance: ${minimumBalance}`,
+    `Start Channel: <#${startChannelId}>`,
+    `Role: <@&${roleId}>`
+  ];
+
+  if (isServerOwner(interaction) && webhookUrl) {
+    settings.push(`Webhook URL: ||${webhookUrl}||`);
+  }
+
+  const outro = "Server members can now use `/verify` command to verify their wallet and get gated role which gives access to exclusive channels and perks!";
+  const message = infoMessage + "\n\n" + settings.join("\n") + "\n\n" + outro;
+
+  await interaction.reply({
+    content: message,
+    ephemeral: true
+  });
+}
+
+async function sendServerConfigReply(interaction, serverConfig) {
+  const { tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl } = serverConfig;
+  const isServerOwnerFlag = isServerOwner(interaction);
+
+  const settings = [
+    `Token Address: ${tokenAddress}`,
+    `Minimum Balance: ${minimumBalance}`,
+    `Start Channel: <#${startChannelId}>`,
+    `Role: <@&${roleId}>`
+  ];
+
+  if (isServerOwnerFlag && webhookUrl) {
+    settings.push(`Webhook URL: ||${webhookUrl}||`);
+  }
+
+  const message = "Here are the server's current configuration settings:\n\n" + settings.join("\n");
+  await interaction.reply({
+    content: message,
+    ephemeral: true
+  });
+}
+
+async function sendVerifyCommandReply(interaction, serverConfig, jwtToken) {
+  const { tokenAddress, minimumBalance } = serverConfig;
+  const greeting = "Hello there! Welcome to the server!";
+  const steps = [
+    `Please Click on Verify with Wallet to verify your wallet address.`,
+    `Make sure you have at least ${minimumBalance} tokens of the token at address \`${tokenAddress}\` in your wallet.`,
+    "Once verified, you'll be automatically assigned the gated role which will give you access to our exclusive channels and perks!"
+  ];
+  const outro =
+    "If you have any questions or encounter any issues, please don't hesitate to reach out to us. Good luck and have fun!";
+  const message = greeting + "\n\n" + steps.join("\n") + "\n\n" + outro;
+
+  const verifyWithWalletButton = new ButtonBuilder()
+    .setLabel("Verify with Wallet")
+    .setStyle(ButtonStyle.Link)
+    .setURL(`${APP_URL}/verify?token=${jwtToken}`);
+
+  const tokenExplorerButton = new ButtonBuilder()
+    .setLabel("View Token on Explorer")
+    .setStyle(ButtonStyle.Link)
+    .setURL(`https://testnet.crossvaluescan.com/token/${tokenAddress}`);
+  const actionRow = new ActionRowBuilder().addComponents(
+    verifyWithWalletButton,
+    tokenExplorerButton
+  );
+
+  await interaction.reply({
+    content: message,
+    components: [actionRow],
+    ephemeral: true
+  });
+}
 
 app.post("/verify", async (req, res) => {
   if (
