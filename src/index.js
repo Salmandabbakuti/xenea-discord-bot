@@ -185,9 +185,17 @@ async function handleSetServerConfig(interaction) {
     return sendEphemeralReply(interaction, "You are not authorized to configure the server.");
   }
 
+  const serverConfig = {
+    tokenAddress,
+    minimumBalance,
+    startChannelId,
+    roleId,
+    webhookUrl
+  };
+
   try {
-    await saveServerConfig({ guildId: interaction.guildId, tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl });
-    await sendConfigSuccessReply({ interaction, tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl });
+    await saveServerConfig(interaction.guildId, serverConfig);
+    await sendServerConfigSuccessReply(interaction, serverConfig);
   } catch (err) {
     logger.error("Failed to save server config", err);
   }
@@ -243,7 +251,8 @@ function sendEphemeralReply(interaction, message) {
   });
 }
 
-async function saveServerConfig({ guildId, tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl }) {
+async function saveServerConfig(guildId, serverConfig) {
+  const { tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl } = serverConfig;
   await prisma.serverConfig.upsert({
     where: { guildId },
     update: {
@@ -264,7 +273,8 @@ async function saveServerConfig({ guildId, tokenAddress, minimumBalance, startCh
   });
 }
 
-async function sendConfigSuccessReply({ interaction, tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl }) {
+async function sendServerConfigSuccessReply(interaction, serverConfig) {
+  const { tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl } = serverConfig;
   const infoMessage = "Server configured successfully. Here are the settings:";
   const settings = [
     `Token Address: ${tokenAddress}`,
