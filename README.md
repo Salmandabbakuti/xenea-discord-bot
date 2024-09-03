@@ -89,6 +89,13 @@ If you encounter any issues with the bot, please do the following:
 
 ## Change Log
 
+### v1.3.0
+
+- Added webhook notifications to alert server admins about verification status changes or critical errors that need attention.
+- Added express rate limiter to prevent ddos attacks and spamming of the bot server.
+- Updated: show webhookurl with spoiler only to server owner on setting/getting
+- Move server source files to src directory
+
 ### v1.2.0
 
 - Added winston logger with log level configuration(info, error, warn debug setup in env)for better logging about bot activities(adding bot to server, received commands/messages from which server by whom, user join/left server loggings) and errors.
@@ -127,6 +134,7 @@ If you encounter any issues with the bot, please do the following:
 - [Postgres](https://www.postgresql.org/) - A powerful, open source object-relational database system.
 - [Ethers.js](https://docs.ethers.io/v5/) - A library that allows you to interact with the Ethereum blockchain.
 - [Express.js](https://expressjs.com/) - A minimal and flexible Node.js web application framework that provides a robust set of features for web and mobile applications.
+- [Winston](https://github.com/winstonjs/winston) - A logger for just about everything. Simple and universal logging library for nodejs.
 - [Xenea](https://xenea.io/) - An EVM-compatible Layer 1 blockchain with integrated autonomous decentralized on-chain storage.
 
 ## Safety

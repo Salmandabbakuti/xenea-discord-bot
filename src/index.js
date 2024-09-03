@@ -1,4 +1,5 @@
 const express = require("express");
+const rateLimit = require('express-rate-limit');
 const {
   Client,
   GatewayIntentBits,
@@ -20,9 +21,17 @@ const {
   APP_URL,
   JWT_SECRET
 } = require("./config");
+const rateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minutes
+  max: 1, // max of 10 requests per minute
+  message: "Oops! You’re sending too many requests. Take a breather and try again soon.",
+  standardHeaders: "draft-7", // if set to true, will treat as draft-6(separate props)
+  legacyHeaders: false
+});
 
 const app = express();
 app.use(express.json());
+app.use(rateLimiter);
 app.use(express.static(path.join(__dirname, "../public")));
 
 const provider = new JsonRpcProvider(RPC_URL);
