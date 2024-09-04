@@ -24,7 +24,7 @@ const {
 
 const rateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minutes
-  max: 10, // max of 10 requests per minute
+  limit: 10, // max of 10 requests per minute
   message: "Oops! You’re sending too many requests. Take a breather and try again soon.",
   standardHeaders: "draft-7", // if set to true, will treat as draft-6(separate props)
   legacyHeaders: false

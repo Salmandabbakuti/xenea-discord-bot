@@ -94,6 +94,7 @@ If you encounter any issues with the bot, please do the following:
 - Added webhook notifications to alert server admins about verification status changes or critical errors that need attention.
 - Added express rate limiter to prevent ddos attacks and spamming of the bot server.
 - Updated: show webhookurl with spoiler only to server owner on setting/getting
+- Refactored the interaction handlers to make them more maintainable
 - Move server source files to src directory
 
 ### v1.2.0
