@@ -3,10 +3,10 @@ CREATE TABLE "ServerConfig" (
     "id" TEXT NOT NULL,
     "guildId" TEXT NOT NULL,
     "startChannelId" TEXT NOT NULL,
-    "gateChannelId" TEXT NOT NULL,
+    "webhookUrl" TEXT NOT NULL DEFAULT '',
     "roleId" TEXT NOT NULL,
     "tokenAddress" TEXT NOT NULL,
-    "minimumBalance" TEXT NOT NULL,
+    "minimumBalance" DOUBLE PRECISION NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 

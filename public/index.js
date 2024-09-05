@@ -4,7 +4,7 @@ const token = new URL(window.location.href).searchParams.get("token");
 const logDiv = document.getElementById("log");
 console.log("token:", token);
 const verifyButton = document.getElementById("verify-btn");
-verifyButton.addEventListener("click", () => verify(), false);
+verifyButton.addEventListener("click", handleVerify, false);
 
 async function verify() {
   if (!token) {
@@ -67,4 +67,13 @@ async function verify() {
     const truncatedErrorMessage = err.message.length > 95 ? err.message.substring(0, 95) + "..." : err.message;
     logDiv.innerHTML = `Something went wrong! ${truncatedErrorMessage}`;
   }
+}
+
+function handleVerify() {
+  verifyButton.disabled = true;
+  verifyButton.innerHTML = "🛡️ Verifying...";
+  verify().finally(() => {
+    verifyButton.disabled = false;
+    verifyButton.innerHTML = "🛡️ Verify Wallet";
+  });
 }

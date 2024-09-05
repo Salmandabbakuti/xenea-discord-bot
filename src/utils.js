@@ -1,4 +1,5 @@
 const { REST, Routes } = require("discord.js");
+const fetch = require("node-fetch");
 const { createLogger, format, transports } = require('winston');
 const { DISCORD_BOT_TOKEN, DISCORD_BOT_APPLICATION_ID, LOG_LEVEL } = require("./config.js");
 
@@ -69,6 +70,12 @@ const commands = [
         description: "Role to assign to verified users",
         type: 8,
         required: true
+      },
+      {
+        name: "webhookurl",
+        description: "Discord channel Webhook URL to post critical messages to server admins",
+        type: 3,
+        required: false
       }
     ]
   }
@@ -96,7 +103,26 @@ const deployCommands = async (guildId) => {
   }
 };
 
+const postDataToWebhook = (webhookUrl, data) => {
+  fetch(webhookUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(data)
+  })
+    .then((res) => {
+      if (!res.ok) {
+        logger.error(`Failed to post data to webhook: ${res.status} - ${res.statusText}`);
+        return;
+      }
+      logger.info("Data posted to webhook successfully");
+    })
+    .catch((err) => logger.error("Error while posting data to webhook", err));
+};
+
 module.exports = {
   deployCommands,
-  logger
+  logger,
+  postDataToWebhook
 };
