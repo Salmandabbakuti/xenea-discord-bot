@@ -111,8 +111,13 @@ const postDataToWebhook = (webhookUrl, data) => {
     },
     body: JSON.stringify(data)
   })
-    .then((res) => res.text())
-    .then(() => logger.info("Posted data to webhook"))
+    .then((res) => {
+      if (!res.ok) {
+        logger.error(`Failed to post data to webhook: ${res.status} - ${res.statusText}`);
+        return;
+      }
+      logger.info("Data posted to webhook successfully");
+    })
     .catch((err) => logger.error("Error while posting data to webhook", err));
 };
 

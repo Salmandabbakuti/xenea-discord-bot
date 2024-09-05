@@ -70,7 +70,7 @@ client.on(Events.GuildCreate, async (guild) => {
     logger.error(`Failed to deploy commands on guild ${guild.name}`, err);
     if (serverConfig?.webhookUrl) {
       postDataToWebhook(serverConfig.webhookUrl, {
-        content: `Attention Required: Failed to deploy commands on guild ${guild.name}: ${err}`,
+        content: `XeneaGuard - Attention Required: Failed to deploy commands on guild ${guild.name}: ${err}`,
       });
     }
   });
@@ -102,7 +102,7 @@ client.on(Events.GuildMemberAdd, async (member) => {
     logger.warn(`Configured start channel not found for ${member.guild.name}. Skipping welcome message for new joiner.`);
     if (serverConfig?.webhookUrl) {
       postDataToWebhook(serverConfig.webhookUrl, {
-        content: `Attention Required: Configured start channel not found for ${member.guild.name} welcome messages!`,
+        content: `XeneaGuard - Attention Required: Configured start channel not found for ${member.guild.name} welcome messages!`,
       });
     }
     return;
@@ -439,7 +439,7 @@ app.post("/verify", async (req, res) => {
     });
     if (serverConfig?.webhookUrl) {
       postDataToWebhook(serverConfig.webhookUrl, {
-        content: `Attention Required: Internal Server Error while verifying user: ${err}`,
+        content: `XeneaGuard - Attention Required: Internal Server Error while verifying user: ${err}`,
       });
     }
     return res

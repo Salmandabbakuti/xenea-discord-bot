@@ -1,6 +1,6 @@
 # Xenea Gated Discord Bot
 
-The Xenea Gated Discord Bot facilitates secure and gated exclusive access to server channels for users holding specific tokens. This bot verifies users' token balances, granting them roles based on their holdings. This role-based access provides exclusive entry to gated channels and periodically checks and updates their roles based on their current balance. Xenea Discord Bot allows you to gate Discord channels to certain users who hold a specific amount of NFT tokens or ERC20 tokens on Xenea Testnet/mainnet. This bot can be installed on any Discord server and configured with your own tokens and roles.
+The Xenea Gated Discord Bot facilitates secure and gated exclusive access to server channels for users holding specific amount of NFT tokens or ERC20 tokens on Xenea Testnet/mainnet. This bot verifies user's token balances, granting them roles based on their holdings. This role-based access provides exclusive entry to gated channels. This bot can be installed on any Discord server and configured with your own tokens and roles.
 
 ### Prerequisites
 
@@ -16,7 +16,7 @@ The Xenea Gated Discord Bot facilitates secure and gated exclusive access to ser
 
 1. Install the Xenea bot on your Discord server. You can use the following link to add the bot to your server. [Add Bot to Server](https://discord.com/oauth2/authorize?client_id=1248189350177669150)
 
-![Screen1s-installation](https://github.com/user-attachments/assets/4a8d99c4-bac4-47d8-a196-a55e99b6fb1c)
+![Screen1s-installation](https://github.com/user-attachments/assets/d7c016c1-55cb-4534-ba63-980b5b091314)
 
 > If the bot doesn't have all the permissions listed above in image, it will not work as expected. Make sure to give all the permissions to the bot.
 
@@ -54,11 +54,11 @@ The Xenea Gated Discord Bot facilitates secure and gated exclusive access to ser
 
 ![Screen2-Bot_Settings](https://github.com/user-attachments/assets/241f5d4f-7e3a-45c5-a25e-a6ef6706d3ea)
 
-3. Go to Installation tab and set Installation Contexts to "Guild Install" and then below in Default Installation Settings, choose scopes: "bot" and "applications.commands" and then in permissions, select the permissions you want to give to the bot. Make sure to select Following permissions: "Manage Roles", "Manage Channels", "Manage Messages", Send Messages", "Read Message History", "Use Slash Commands".
+3. Go to Installation tab and set Installation Contexts to "Guild Install" and then below in Default Installation Settings, choose scopes: "bot" and "applications.commands" and then in permissions, select the permissions you want to give to the bot. Make sure to select Following permissions: "Manage Roles", "View Channels", Send Messages", "Use Slash Commands".
 
 ![Screen3-Install_contexts](https://github.com/user-attachments/assets/9a527f2b-001c-410c-8cba-873291b2dc67)
 
-![Screen4-Install_permissions](https://github.com/user-attachments/assets/0a0e7fab-4361-4b50-8730-ad863be55aeb)
+![Screen4-Install_permissions](https://github.com/user-attachments/assets/328908c0-0c62-4193-be7a-046c548cbc6a)
 
 4. Copy th Bot token from Bot tab and Application ID from General Information tab and add them to the .env file. `DISCORD_BOT_TOKEN=YOUR_BOT_TOKEN`, `DISCORD_CLIENT_ID=YOUR_APPLICATION_ID`
 
