@@ -11,12 +11,14 @@ async function verify() {
     console.warn(
       "Oh great, another user trying to verify without a token. Let's just print some error messages and see if they notice🙄"
     );
-    logDiv.innerHTML = "No JWT token provided. Please use the link provided by XeneaGuard Bot";
+    logDiv.style.color = "#ffc107"; // visisble yellow
+    logDiv.innerHTML = "⚠ No JWT token provided. Please use the link provided by XeneaGuard Bot";
     return;
   }
 
   if (!window.ethereum) {
-    logDiv.innerHTML = "Please use a Web3 browser like MetaMask to connect your wallet";
+    logDiv.style.color = "#ffc107";
+    logDiv.innerHTML = "⚠ Please use a Web3 browser like MetaMask to connect your wallet";
     return;
   }
 
@@ -25,7 +27,7 @@ async function verify() {
       method: "eth_requestAccounts"
     });
 
-    document.getElementById("address").innerHTML = `Your wallet address: ${address}`;
+    document.getElementById("address").innerHTML = `Your wallet address: <strong>${address}</strong>`;
 
     const provider = new ethers.BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
@@ -41,7 +43,7 @@ async function verify() {
 
     const signature = await signer.signMessage(message);
 
-    logDiv.innerHTML = "Please wait while we authorize your request... We've sent out our highly trained monkeys to get the job done. They're currently working on it, so just sit back and relax for a moment! 🐒🍌";
+    logDiv.innerHTML = "ⓘ Please wait while we authorize your request... We've sent out our highly trained monkeys to get the job done. They're currently working on it, so just sit back and relax for a moment! 🐒🍌";
 
     const data = { token, address, message, signature };
     const response = await fetch("/verify", {
@@ -51,25 +53,31 @@ async function verify() {
     });
 
     if (response.ok) {
-      logDiv.innerHTML = "Verification successful! You can now close this tab and return to Discord.";
+      logDiv.style.color = "green";
+      logDiv.innerHTML = "✔ Verification successful! You can now close this tab and return to Discord.";
       return;
     }
 
     const result = await response.json();
 
     if (result.code === "ok" && result.message === "Success") {
-      logDiv.innerHTML = "Verification successful! You can now close this tab and return to Discord.";
+      logDiv.style.color = "green";
+      logDiv.innerHTML = "✔ Verification successful! You can now close this tab and return to Discord.";
     } else {
-      logDiv.innerHTML = `Verification failed! ${result.message}`;
+      logDiv.style.color = "red";
+      logDiv.innerHTML = `⮾ Verification failed! ${result.message}`;
     }
   } catch (err) {
     console.error("Failed to verify wallet:", err);
     const truncatedErrorMessage = err.message.length > 95 ? err.message.substring(0, 95) + "..." : err.message;
-    logDiv.innerHTML = `Something went wrong! ${truncatedErrorMessage}`;
+    logDiv.style.color = "red";
+    logDiv.innerHTML = `⮾ Something went wrong! ${truncatedErrorMessage}`;
   }
 }
 
 function handleVerify() {
+  logDiv.style.color = "#333";
+  logDiv.innerHTML = "ⓘ Please wait while we verify your wallet...";
   verifyButton.disabled = true;
   verifyButton.innerHTML = "🛡️ Verifying...";
   verify().finally(() => {
