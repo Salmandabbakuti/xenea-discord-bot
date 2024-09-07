@@ -1,10 +1,20 @@
 const { REST, Routes } = require("discord.js");
 const fetch = require("node-fetch");
 const { createLogger, format, transports } = require('winston');
+const errsole = require('errsole');
+const ErrsoleSQLite = require('errsole-sqlite');
 const { DISCORD_BOT_TOKEN, DISCORD_BOT_APPLICATION_ID, LOG_LEVEL } = require("./config.js");
 
 const { combine, timestamp, printf, colorize, errors } = format;
 
+//errsole setup
+errsole.initialize({
+  storage: new ErrsoleSQLite("./logs.db"),
+  collectLogs: ['error', 'warn', 'info', 'debug'],
+  port: 3001,
+  enableConsoleOutput: true,
+  enableDashboard: true,
+});
 // Log format
 const logFormat = printf(({ level, message, timestamp, ...meta }) => {
   const extraArgsArr = meta[Symbol.for('splat')];
@@ -124,5 +134,6 @@ const postDataToWebhook = (webhookUrl, data) => {
 module.exports = {
   deployCommands,
   logger,
-  postDataToWebhook
+  postDataToWebhook,
+  errsole
 };

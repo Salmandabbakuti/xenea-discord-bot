@@ -13,7 +13,7 @@ const { Contract, formatUnits, isAddress, JsonRpcProvider, verifyMessage } = req
 const jwt = require("jsonwebtoken");
 const path = require('path');
 const prisma = require("./prisma");
-const { deployCommands, logger, postDataToWebhook } = require("./utils");
+const { deployCommands, logger, postDataToWebhook, errsole } = require("./utils");
 
 const {
   DISCORD_BOT_TOKEN,
@@ -56,8 +56,10 @@ const client = new Client({
 });
 client.login(DISCORD_BOT_TOKEN);
 
-client.once(Events.ClientReady, () =>
-  logger.info(`Logged in as ${client.user.tag}`)
+client.once(Events.ClientReady, () => {
+  logger.info(`Logged in as ${client.user.tag}`);
+  errsole.log(`Logged in as ${client.user.tag}`);
+}
 );
 
 client.on(Events.GuildCreate, async (guild) => {
@@ -453,6 +455,8 @@ app.get("/verify", (req, res) =>
 );
 
 const port = process.env.PORT || 3000;
-app.listen(port, () =>
-  logger.info(`🔥 Server listening at http://localhost:${port} 🚀`)
+app.listen(port, () => {
+  logger.info(`🔥 Server listening at http://localhost:${port} 🚀`);
+  errsole.log(`🔥 Server listening at http://localhost:${port} 🚀`);
+}
 );
