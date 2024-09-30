@@ -36,8 +36,6 @@ app.use(express.json());
 app.use(rateLimiter);
 app.use(express.static(path.join(__dirname, "../public")));
 
-const provider = new JsonRpcProvider(RPC_URL);
-
 // compatile with erc20/erc721
 const tokenABI = [
   "function balanceOf(address account) view returns (uint256)",
@@ -171,7 +169,7 @@ async function handlePingCommand(interaction) {
 }
 
 async function handleSetServerConfig(interaction) {
-  const { tokenAddress, webhookUrl, minimumBalance, startChannelId, roleId } = getConfigOptions(interaction);
+  const { rpcUrl, tokenAddress, webhookUrl, minimumBalance, startChannelId, roleId } = getConfigOptions(interaction);
 
   if (!isAddress(tokenAddress)) {
     return sendEphemeralReply(interaction, "Invalid token address");
@@ -186,6 +184,7 @@ async function handleSetServerConfig(interaction) {
   }
 
   const serverConfig = {
+    rpcUrl,
     tokenAddress,
     minimumBalance,
     startChannelId,
@@ -198,40 +197,84 @@ async function handleSetServerConfig(interaction) {
     await sendServerConfigSuccessReply(interaction, serverConfig);
   } catch (err) {
     logger.error("Failed to save server config", err);
+    sendEphemeralReply(interaction, "Failed to save server config. Please try again later.");
+    const serverConfig = await prisma.serverConfig.findUnique({
+      where: { guildId: interaction.guildId }
+    }).catch((err) => {
+      logger.error("Failed to get server config", err);
+    });
+    if (serverConfig?.webhookUrl) {
+      postDataToWebhook(serverConfig.webhookUrl, {
+        content: `XeneaGuard - Attention Required: Internal Server Error while setting server config: ${err}`,
+      });
+    }
   }
 }
 
 async function handleGetServerConfig(interaction) {
-  const serverConfig = await prisma.serverConfig.findUnique({
-    where: { guildId: interaction.guildId },
-  });
+  try {
+    const serverConfig = await prisma.serverConfig.findUnique({
+      where: { guildId: interaction.guildId }
+    });
 
-  if (!serverConfig) {
-    return sendEphemeralReply(interaction, "Server not configured. Ask server admin to configure the server with `/set-serverconfig` command");
+    if (!serverConfig) {
+      return sendEphemeralReply(interaction, "Server not configured. Ask server admin to configure the server with `/set-serverconfig` command");
+    }
+
+    await sendServerConfigReply(interaction, serverConfig);
+  } catch (err) {
+    logger.error("Failed to get server config", err);
+    sendEphemeralReply(interaction, "Failed to get server config. Please try again later.");
+    // send error message to webhook if available
+    const serverConfig = await prisma.serverConfig.findUnique({
+      where: { guildId: interaction.guildId }
+    }).catch((err) => {
+      logger.error("Failed to get server config", err);
+    });
+    if (serverConfig?.webhookUrl) {
+      postDataToWebhook(serverConfig.webhookUrl, {
+        content: `XeneaGuard - Attention Required: Internal Server Error while getting server config: ${err}`,
+      });
+    }
   }
-
-  await sendServerConfigReply(interaction, serverConfig);
 }
 
 async function handleVerifyCommand(interaction) {
-  const serverConfig = await prisma.serverConfig.findUnique({
-    where: { guildId: interaction.guildId },
-  });
+  try {
+    const serverConfig = await prisma.serverConfig.findUnique({
+      where: { guildId: interaction.guildId }
+    });
 
-  if (!serverConfig) {
-    return sendEphemeralReply(interaction, "Server not configured. Ask server admin to configure the server with `/set-serverconfig` command");
+    if (!serverConfig) {
+      return sendEphemeralReply(interaction, "Server not configured. Ask server admin to configure the server with `/set-serverconfig` command");
+    }
+
+    const jwtToken = jwt.sign(
+      { configId: serverConfig.id, guildId: interaction.guildId, memberId: interaction.member.id },
+      JWT_SECRET,
+      { expiresIn: "5m" } // 5 minutes
+    );
+    await sendVerifyCommandReply(interaction, serverConfig, jwtToken);
+  } catch (err) {
+    logger.error("Failed to handle verify command", err);
+    sendEphemeralReply(interaction, "Failed to send verification request. Please try again later.");
+    // send error message to webhook if available
+    const serverConfig = await prisma.serverConfig.findUnique({
+      where: { guildId: interaction.guildId }
+    }).catch((err) => {
+      logger.error("Failed to get server config on verification request", err);
+    });
+    if (serverConfig?.webhookUrl) {
+      postDataToWebhook(serverConfig.webhookUrl, {
+        content: `XeneaGuard - Attention Required: Internal Server Error while verifying user: ${err}`,
+      });
+    }
   }
-
-  const jwtToken = jwt.sign(
-    { configId: serverConfig.id, guildId: interaction.guildId, memberId: interaction.member.id },
-    JWT_SECRET,
-    { expiresIn: "5m" } // 5 minutes
-  );
-  await sendVerifyCommandReply(interaction, serverConfig, jwtToken);
 }
 
 function getConfigOptions(interaction) {
   return {
+    rpcUrl: interaction.options.getString("rpcurl"),
     tokenAddress: interaction.options.getString("tokenaddress"),
     webhookUrl: interaction.options.getString("webhookurl"),
     minimumBalance: interaction.options.getInteger("minimumbalance"),
@@ -252,10 +295,11 @@ function sendEphemeralReply(interaction, message) {
 }
 
 async function saveServerConfig(guildId, serverConfig) {
-  const { tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl } = serverConfig;
+  const { rpcUrl, tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl } = serverConfig;
   await prisma.serverConfig.upsert({
     where: { guildId },
     update: {
+      rpcUrl,
       tokenAddress,
       minimumBalance,
       startChannelId,
@@ -264,6 +308,7 @@ async function saveServerConfig(guildId, serverConfig) {
     },
     create: {
       guildId,
+      rpcUrl,
       tokenAddress,
       minimumBalance,
       startChannelId,
@@ -274,9 +319,13 @@ async function saveServerConfig(guildId, serverConfig) {
 }
 
 async function sendServerConfigSuccessReply(interaction, serverConfig) {
-  const { tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl } = serverConfig;
+  const { rpcUrl, tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl } = serverConfig;
+  const provider = new JsonRpcProvider(rpcUrl);
+  const chain = await provider.getNetwork();
+
   const infoMessage = "Server configured successfully. Here are the settings:";
   const settings = [
+    `Chain: ${chain?.name}(${chain?.chainId})`,
     `Token Address: ${tokenAddress}`,
     `Minimum Balance: ${minimumBalance}`,
     `Start Channel: <#${startChannelId}>`,
@@ -284,7 +333,7 @@ async function sendServerConfigSuccessReply(interaction, serverConfig) {
   ];
 
   if (isServerOwner(interaction) && webhookUrl) {
-    settings.push(`Webhook URL: ||${webhookUrl}||`);
+    settings.push(`RPC URL: ||${rpcUrl}||`, `Webhook URL: ||${webhookUrl}||`);
   }
 
   const outro = "Server members can now use `/verify` command to verify their wallet and get gated role which gives access to exclusive channels and perks!";
@@ -297,10 +346,13 @@ async function sendServerConfigSuccessReply(interaction, serverConfig) {
 }
 
 async function sendServerConfigReply(interaction, serverConfig) {
-  const { tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl } = serverConfig;
+  const { rpcUrl, tokenAddress, minimumBalance, startChannelId, roleId, webhookUrl } = serverConfig;
   const isServerOwnerFlag = isServerOwner(interaction);
+  const provider = new JsonRpcProvider(rpcUrl);
+  const chain = await provider.getNetwork();
 
   const settings = [
+    `Chain: ${chain?.name}(${chain?.chainId})`,
     `Token Address: ${tokenAddress}`,
     `Minimum Balance: ${minimumBalance}`,
     `Start Channel: <#${startChannelId}>`,
@@ -308,7 +360,7 @@ async function sendServerConfigReply(interaction, serverConfig) {
   ];
 
   if (isServerOwnerFlag && webhookUrl) {
-    settings.push(`Webhook URL: ||${webhookUrl}||`);
+    settings.push(`RPC URL: ||${rpcUrl}||`, `Webhook URL: ||${webhookUrl}||`);
   }
 
   const message = "Here are the server's current configuration settings:\n\n" + settings.join("\n");
@@ -319,11 +371,14 @@ async function sendServerConfigReply(interaction, serverConfig) {
 }
 
 async function sendVerifyCommandReply(interaction, serverConfig, jwtToken) {
-  const { tokenAddress, minimumBalance } = serverConfig;
+  const { rpcUrl, tokenAddress, minimumBalance } = serverConfig;
+  const provider = new JsonRpcProvider(rpcUrl);
+  const chain = await provider.getNetwork();
+
   const greeting = "Hello there! Welcome to the server!";
   const steps = [
     `Please Click on Verify with Wallet to verify your wallet address.`,
-    `Make sure you have at least ${minimumBalance} tokens of the token at address \`${tokenAddress}\` in your wallet.`,
+    `Make sure you have at least ${minimumBalance} tokens of the token at address \`${tokenAddress}\` on \`${chain?.name}(${chain?.chainId})\` chain in your wallet.`,
     "Once verified, you'll be automatically assigned the gated role which will give you access to our exclusive channels and perks!"
   ];
   const outro =
@@ -382,9 +437,13 @@ app.post("/verify", async (req, res) => {
         message: "Discord server not yet configured for verification"
       });
     }
-    const { tokenAddress, minimumBalance, startChannelId, roleId } = serverConfig;
+    const { rpcUrl, tokenAddress, minimumBalance, startChannelId, roleId } = serverConfig;
 
+    const provider = new JsonRpcProvider(rpcUrl);
     const tokenContract = new Contract(tokenAddress, tokenABI, provider);
+    const chain = await provider.getNetwork();
+
+    logger.info(`Checking token balance for address: ${address} on ${chain?.name}(${chain?.chainId}) chain`);
 
     let hasRequiredBalance = false;
     // try checking erc20/721 by calling decimals
@@ -435,7 +494,7 @@ app.post("/verify", async (req, res) => {
     const serverConfig = await prisma.serverConfig.findUnique({
       where: { guildId },
     }).catch((err) => {
-      logger.error("Failed to get server config", err);
+      logger.error("Failed to get server config on verifying user", err);
     });
     if (serverConfig?.webhookUrl) {
       postDataToWebhook(serverConfig.webhookUrl, {

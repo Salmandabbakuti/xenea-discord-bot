@@ -48,6 +48,12 @@ const commands = [
     description: "Configure server settings for verification/gating by admin",
     options: [
       {
+        name: "rpcurl",
+        description: "RPC URL of the blockchain network",
+        type: 3,
+        required: true
+      },
+      {
         name: "tokenaddress",
         description: "Contract address of ERC20/721 token for gating access",
         type: 3,
