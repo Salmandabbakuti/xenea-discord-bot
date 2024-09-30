@@ -17,7 +17,6 @@ const { deployCommands, logger, postDataToWebhook } = require("./utils");
 
 const {
   DISCORD_BOT_TOKEN,
-  RPC_URL,
   APP_URL,
   JWT_SECRET
 } = require("./config");
@@ -68,7 +67,7 @@ client.on(Events.GuildCreate, async (guild) => {
     logger.error(`Failed to deploy commands on guild ${guild.name}`, err);
     if (serverConfig?.webhookUrl) {
       postDataToWebhook(serverConfig.webhookUrl, {
-        content: `XeneaGuard - Attention Required: Failed to deploy commands on guild ${guild.name}: ${err}`,
+        content: `DisGuard - Attention Required: Failed to deploy commands on guild ${guild.name}: ${err}`,
       });
     }
   });
@@ -100,7 +99,7 @@ client.on(Events.GuildMemberAdd, async (member) => {
     logger.warn(`Configured start channel not found for ${member.guild.name}. Skipping welcome message for new joiner.`);
     if (serverConfig?.webhookUrl) {
       postDataToWebhook(serverConfig.webhookUrl, {
-        content: `XeneaGuard - Attention Required: Configured start channel not found for ${member.guild.name} welcome messages!`,
+        content: `DisGuard - Attention Required: Configured start channel not found for ${member.guild.name} welcome messages!`,
       });
     }
     return;
@@ -205,7 +204,7 @@ async function handleSetServerConfig(interaction) {
     });
     if (serverConfig?.webhookUrl) {
       postDataToWebhook(serverConfig.webhookUrl, {
-        content: `XeneaGuard - Attention Required: Internal Server Error while setting server config: ${err}`,
+        content: `DisGuard - Attention Required: Internal Server Error while setting server config: ${err}`,
       });
     }
   }
@@ -233,7 +232,7 @@ async function handleGetServerConfig(interaction) {
     });
     if (serverConfig?.webhookUrl) {
       postDataToWebhook(serverConfig.webhookUrl, {
-        content: `XeneaGuard - Attention Required: Internal Server Error while getting server config: ${err}`,
+        content: `DisGuard - Attention Required: Internal Server Error while getting server config: ${err}`,
       });
     }
   }
@@ -266,7 +265,7 @@ async function handleVerifyCommand(interaction) {
     });
     if (serverConfig?.webhookUrl) {
       postDataToWebhook(serverConfig.webhookUrl, {
-        content: `XeneaGuard - Attention Required: Internal Server Error while verifying user: ${err}`,
+        content: `DisGuard - Attention Required: Internal Server Error while verifying user: ${err}`,
       });
     }
   }
@@ -498,7 +497,7 @@ app.post("/verify", async (req, res) => {
     });
     if (serverConfig?.webhookUrl) {
       postDataToWebhook(serverConfig.webhookUrl, {
-        content: `XeneaGuard - Attention Required: Internal Server Error while verifying user: ${err}`,
+        content: `DisGuard - Attention Required: Internal Server Error while verifying user: ${err}`,
       });
     }
     return res

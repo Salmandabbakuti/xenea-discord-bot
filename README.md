@@ -1,6 +1,6 @@
-# Xenea Gated Discord Bot
+# DisGuard
 
-The Xenea Gated Discord Bot facilitates secure and gated exclusive access to server channels for users holding specific amount of NFT tokens or ERC20 tokens on Xenea Testnet/mainnet. This bot verifies user's token balances, granting them roles based on their holdings. This role-based access provides exclusive entry to gated channels. This bot can be installed on any Discord server and configured with your own tokens and roles.
+DisGuard facilitates secure and gated exclusive access to server channels for users holding specific amount of NFT tokens or ERC20 tokens on any EVM-compatible chain. This bot verifies user's token balances, granting them roles based on their holdings. This role-based access provides exclusive entry to gated channels. This bot can be installed on any Discord server and configured with your own tokens and roles.
 
 ### Prerequisites
 
@@ -14,7 +14,7 @@ The Xenea Gated Discord Bot facilitates secure and gated exclusive access to ser
 
 #### For Server Admins
 
-1. Install the Xenea bot on your Discord server. You can use the following link to add the bot to your server. [Add Bot to Server](https://discord.com/oauth2/authorize?client_id=1248189350177669150)
+1. Install the DisGuard bot on your Discord server. You can use the following link to add the bot to your server. [Add Bot to Server](https://discord.com/oauth2/authorize?client_id=1248189350177669150)
 
 ![Screen1s-installation](https://github.com/user-attachments/assets/d7c016c1-55cb-4534-ba63-980b5b091314)
 
@@ -28,7 +28,7 @@ The Xenea Gated Discord Bot facilitates secure and gated exclusive access to ser
 
 #### For Server Members
 
-1. Join the Discord server where the Xenea bot is installed.
+1. Join the Discord server where the DisGuard bot is installed.
 
 2. Open the `#⁠start-here` (or any info channel your community managers instruct) channel on discord server. Type the command `/verify` in the channel.
 
@@ -62,7 +62,7 @@ The Xenea Gated Discord Bot facilitates secure and gated exclusive access to ser
 
 4. Copy th Bot token from Bot tab and Application ID from General Information tab and add them to the .env file. `DISCORD_BOT_TOKEN=YOUR_BOT_TOKEN`, `DISCORD_CLIENT_ID=YOUR_APPLICATION_ID`
 
-5. Update the .env file with the `DATABASE_URL`, Xenea `RPC_URL`, `APP_URL`, and other necessary details.
+5. Update the .env file with the `DATABASE_URL`, `APP_URL`, and other necessary details.
 
 6. Install the dependencies using `npm install`.
 
@@ -88,6 +88,10 @@ If you encounter any issues with the bot, please do the following:
 4. Check the logs for any error messages
 
 ## Change Log
+
+### v1.4.0
+
+- Added support for any chain ERC20/721 tokens and NFTs by configurable chain RPC URL
 
 ### v1.3.0
 
@@ -136,7 +140,6 @@ If you encounter any issues with the bot, please do the following:
 - [Ethers.js](https://docs.ethers.io/v5/) - A library that allows you to interact with the Ethereum blockchain.
 - [Express.js](https://expressjs.com/) - A minimal and flexible Node.js web application framework that provides a robust set of features for web and mobile applications.
 - [Winston](https://github.com/winstonjs/winston) - A logger for just about everything. Simple and universal logging library for nodejs.
-- [Xenea](https://xenea.io/) - An EVM-compatible Layer 1 blockchain with integrated autonomous decentralized on-chain storage.
 
 ## Safety
 

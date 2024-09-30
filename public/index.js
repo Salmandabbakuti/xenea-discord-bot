@@ -12,7 +12,7 @@ async function verify() {
       "Oh great, another user trying to verify without a token. Let's just print some error messages and see if they notice🙄"
     );
     logDiv.style.color = "#ffc107"; // visisble yellow
-    logDiv.innerHTML = "⚠ No JWT token provided. Please use the link provided by XeneaGuard Bot";
+    logDiv.innerHTML = "⚠ No JWT token provided. Please use the link provided by DisGuard Bot";
     return;
   }
 
@@ -33,7 +33,7 @@ async function verify() {
     const signer = await provider.getSigner();
 
     const message = [
-      "Welcome to Xenea Token Gated Discord Portal. This site is requesting your signature to approve login authorization!",
+      "Welcome to DisGuard Portal. This site is requesting your signature to approve login authorization!",
       "Click to sign in and accept the terms and conditions (https://example.org/) of this app.",
       "This request will not trigger a blockchain transaction or cost any gas fees.",
       `Wallet Address: ${address}`,
